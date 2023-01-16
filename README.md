@@ -2,12 +2,12 @@
 
 ## What is weid?
 
-Wied is a modular, configurable tool for sequentially prompting the user to answer questions and perform actions.
+`wied` is a modular, configurable tool for sequentially prompting the user to answer questions and perform actions.
 
-Realistically, weid can be a lot of things:
+Realistically, `weid` can be a lot of things:
 
 - A terminal-based menu frontend
-- A tool for reviewing/reacting to so something
+- A tool for reviewing/reacting to something
 - A quiz/flashcard interface
 - A text-based adventure game engine
 
