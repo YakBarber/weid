@@ -46,26 +46,23 @@ pub struct PinboardTag {
 pub type PinboardTagList = HashMap<String,u32>;
 
 pub struct PinboardClient {
-    required_args: Vec<(String, String)>,
+    auth_token: String, // user:1234567890ABCDEABCDE
+    format: String, // only "json" right now
 }
 
 #[allow(dead_code)]
 impl PinboardClient {
     pub fn new(auth: String) -> PinboardClient {
         PinboardClient {
-            required_args: 
-                vec!(
-                    (String::from("auth_token"), auth),
-                    (String::from("format"), String::from("json")),
-                    ),
+            auth_token: auth,
+            format: "json".to_string(),
         }
     }
 
     fn make_api_url(&self, method: &str, args: &Vec<(String, String)>) -> PinboardUrl {
         let mut url = String::from(&format!("https://api.pinboard.in/v1/{method}?"));
-        for (k,v) in &self.required_args {
-            url.push_str(&format!("{k}={v}&")[..]);
-        };
+        url.push_str(&format!("auth_token={}&", self.auth_token)[..]);
+        url.push_str(&format!("format={}&", self.format)[..]);
         if !args.is_empty() {
             for (k,v) in args {
                 url.push_str(&format!("{k}={v}&")[..]);
@@ -82,15 +79,13 @@ impl PinboardClient {
     }
 
     pub fn get_posts_recent(&self, count: u32) -> Result<PinboardPosts> {
-        let mut args = self.required_args.clone();
-        args.push((String::from("count"), count.to_string()));
+        let args = vec!(("count".to_string(), count.to_string()));
         self.api_get::<PinboardPosts>("posts/recent", &args)
     }
 
     pub fn get_suggested_tags(&self, url: &PinboardUrl) -> Result<PinboardSuggested> {
-        let mut args = self.required_args.clone();
-        args.push((String::from("url"), url.clone()));
-        self.api_get::<PinboardSuggested>("posts/suggest", &Vec::new())
+        let args = vec!(("url".to_string(), url.clone()));
+        self.api_get::<PinboardSuggested>("posts/suggest", &args)
     }
 
     pub fn get_all_tags(&self) -> Result<PinboardTagList> {
@@ -99,11 +94,7 @@ impl PinboardClient {
 
     // this one has a once per 5 min rate limit!
     pub fn get_all_posts(&self, args: Vec<(String,String)>) -> Result<Vec<PinboardPost>> {
-        let mut _args = self.required_args.clone();
-        for arg in &args {
-            _args.push(arg.clone());
-        };
-        self.api_get::<Vec<PinboardPost>>("posts/all", &_args)
+        self.api_get::<Vec<PinboardPost>>("posts/all", &args)
     }
 }
 
