@@ -13,24 +13,24 @@ pub type PinboardUrl = String;
 #[derive(Debug,Deserialize)]
 pub struct PinboardPost {
 
-    href: String,
-    description: String,
-    extended: String,
-    hash: String,
-    time: String,
+    pub href: String,
+    pub description: String,
+    pub extended: String,
+    pub hash: String,
+    pub time: String,
 
     #[serde(default)]
-    others: String,
+    pub others: String,
 
     #[serde(default)]
-    tag: Vec<String>,
+    pub tag: Vec<String>,
 }
 
 #[derive(Debug,Deserialize)]
 pub struct PinboardPosts {
-    date: String,
-    user: String,
-    posts: Vec<PinboardPost>,
+    pub date: String,
+    pub user: String,
+    pub posts: Vec<PinboardPost>,
 }
 
 //this is ugly but at least it deserializes.
@@ -38,6 +38,7 @@ pub struct PinboardPosts {
 pub type PinboardSuggested = Vec<HashMap<String,Vec<String>>>;
 
 #[derive(Debug,Deserialize)]
+#[allow(dead_code)]
 pub struct PinboardTag {
     count: u32,
     tag: String,
