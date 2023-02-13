@@ -12,7 +12,7 @@ use std::io::{stdout, stderr, Write};
 use termimad::{MadSkin};
 use termimad as t;
 
-mod pbin;
+use weid::pbin;
 
 impl Debug for Box<dyn Outcome> {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(),std::fmt::Error> {
