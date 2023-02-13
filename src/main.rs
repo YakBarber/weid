@@ -1,6 +1,8 @@
 
 
 #![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
 
 //use atty;
 //use clap::Parser;
@@ -12,10 +14,12 @@ use std::io::{stdout, stderr, Write};
 use termimad::{MadSkin};
 use termimad as t;
 
+
+use weid::util::Result;
 use weid::pbin;
 
 impl Debug for Box<dyn Outcome> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(),std::fmt::Error> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
         println!("Outcome");
         Ok(())
     }

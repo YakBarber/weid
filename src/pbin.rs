@@ -6,7 +6,9 @@ use serde::{Deserialize};
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+use crate::util::Result;
+
+//pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub type PinboardUrl = String;
 
