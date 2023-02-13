@@ -10,6 +10,8 @@ use std::env;
 use std::fmt::{Debug};
 use std::collections::HashMap;
 use std::io::{stdout, stderr, Write};
+use std::process::Command;
+use std::string::String;
 
 use termimad::{MadSkin};
 use termimad as t;
@@ -88,6 +90,32 @@ impl Outcome for StdoutOutcome {
         match stdout().write_all(bytes) {
             Ok(_) => OutcomeResult::Success,
             Err(_) => OutcomeResult::Failure,
+        }
+    }
+}
+
+struct CmdOutcome {
+    cmdargs: [String],
+}
+
+impl CmdOutcome {
+    fn run_cmd(&self) -> Result<String>{
+        let mut builder = Command::new(&self.cmdargs[0]);
+        let _ = &builder.args(&self.cmdargs[1..]);
+        
+        let out = builder.output()?;
+        
+        Ok(String::from_utf8(out.stdout)?)
+    }
+}
+
+impl Outcome for CmdOutcome {
+    fn handler(&self, display: &str) -> OutcomeResult {
+        match &self.run_cmd() {
+            Ok(out) =>
+                OutcomeResult::Success,
+            Err(_) =>
+                OutcomeResult::Failure,
         }
     }
 }
