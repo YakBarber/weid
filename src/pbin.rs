@@ -74,10 +74,9 @@ impl PinboardClient {
         url
     }
 
-    fn api_get<T: DeserializeOwned>(&self, method: &str, args: &Vec<(String, String)> ) -> Result<T> {
-        let url = self.make_api_url(method, args);
+    fn api_get<T: DeserializeOwned>(&self, meth: &str, args: &Vec<(String, String)> ) -> Result<T> {
+        let url = self.make_api_url(meth, args);
         let r = reqwest::blocking::get(url)?.text()?;
-        //println!("{:?}", r);
         serde_json::from_str(&r[..]).map_err(|e| e.into())
     }
 

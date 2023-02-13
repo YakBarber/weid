@@ -36,13 +36,13 @@ struct Answer {
 }
 
 #[derive(Debug)]
-struct Query<'a> {
+struct Query {
     id: u16,
     text: String,
-    answers: &'a Vec<Answer>,
+    answers: Vec<Answer>,
 }
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 enum OutcomeResult {
     NextQuery(u16),
     Success,
@@ -51,6 +51,7 @@ enum OutcomeResult {
 
 trait Outcome {
     fn handler(&self, display: &str) -> OutcomeResult;
+
 }
 
 
@@ -153,10 +154,10 @@ fn answers_to_asks(answers: &Vec<Answer>) -> HashMap<String, &Answer> {
 
 fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
     let mut q = t::Question::new(&query.text);
-    for a in query.answers {
+    for a in &query.answers {
         q.add_answer(a.id.to_string(), &a.display);
     };
-    let ans_map = answers_to_asks(query.answers);
+    let ans_map = answers_to_asks(&query.answers);
    
     let skin = make_skin();
     let ans = q.ask(&skin).ok()?;
