@@ -112,6 +112,16 @@ impl Iterator for QueryList {
     }
 }
 
+impl FromIterator<Query> for QueryList {
+    fn from_iter<I: IntoIterator<Item=Query>>(iter: I) -> Self {
+        let mut out = QueryList::new();
+        for item in iter {
+            out.append(item);
+        };
+        out
+    }
+}
+
 #[cfg(test)]
 mod test {
 
@@ -212,6 +222,21 @@ mod test {
 
         assert_eq!(outs, vec![1,2,3]);
 
+    }
+
+    #[test]
+    fn querylist_from_iter() {
+        let mut qvec = Vec::new();
+        let q1 = make_query(1, 2);
+        let q2 = make_query(2, 2);
+        qvec.push(q1);
+        qvec.push(q2);
+
+        let qlist = QueryList::from_iter(qvec);
+
+        assert_eq!(qlist.queries.len(), 2);
+        assert_eq!(qlist.key_order.len(), 2);
+        assert_eq!(qlist.key_order, VecDeque::from([1,2]));
     }
     
 
