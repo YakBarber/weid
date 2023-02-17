@@ -21,6 +21,7 @@ pub enum OutcomeResult {
     Failure,
 }
 
+//TODO: need to rethink this. Needs to do instantaneous and delayed actions...
 pub trait Outcome {
     fn handler(&self, display: &str) -> OutcomeResult;
 }

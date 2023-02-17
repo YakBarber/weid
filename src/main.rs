@@ -83,20 +83,27 @@ fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>) -> Vec<Query> {
     queries
 }
 
-//fn do_weid(mut queries: Vec<Query>) -> Result<()> {
-//    let marp = queries.iter_mut().map(|q| (q.id, q));
-//    let id_map = HashMap::from_iter(marp);
-//    let mut id;
-//    let mut index = 0;
-//    loop {
-//        match queries.get(index) {
-//            None => return Ok(()),
-//            Some(q) => {
-//                id = q.id;
-//            },
-//        }
-//    };
-//}
+fn do_weid(qlist: QueryList) -> Result<()> {
+
+    for query in qlist {
+        let answer = do_query(&query);
+
+        let from_outcomes = match answer {
+            Some(ans) => {
+                execute_outcomes(ans)
+            },
+            None => {
+                println!("{:?}", answer);
+                Vec::new()
+            },
+        };
+        println!("{:?}", from_outcomes);
+
+    };
+
+
+    Ok(())
+}
 
 fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
     let mut q = t::Question::new(&query.text);
@@ -107,8 +114,6 @@ fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
    
     let skin = make_skin();
     let ans = q.ask(&skin).ok()?;
-
-    println!("{:?}", ans);
 
     ans_map.get(&ans).copied()
         
@@ -122,24 +127,9 @@ fn main() {
     let last = p.get_posts_recent(5).unwrap();
 
     let queries = create_pinboard_queries(&last.posts);
-    println!("{:?}", queries);
 
-    for query in queries {
-        let chosen = do_query(&query);
-
-        println!("{:?}", chosen);
-        
-        let from_outcomes = match chosen {
-            Some(ans) => {
-                execute_outcomes(ans)
-            },
-            None => {
-                println!("{:?}", chosen);
-                Vec::new()
-            },
-        };
-        println!("{:?}", from_outcomes);
-    };
+    let qlist = QueryList::from_iter(queries);
+    let out = do_weid(qlist);
 
 }
 
