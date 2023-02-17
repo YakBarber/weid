@@ -7,119 +7,16 @@
 //use atty;
 //use clap::Parser;
 use std::env;
-use std::fmt::{Debug};
-use std::collections::HashMap;
-use std::io::{stdout, stderr, Write};
-use std::process::Command;
 use std::string::String;
+use std::collections::HashMap;
 
-use termimad::{MadSkin};
+use termimad::MadSkin;
 use termimad as t;
-
 
 use weid::util::Result;
 use weid::pbin;
-
-impl Debug for Box<dyn Outcome> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        println!("Outcome");
-        Ok(())
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-struct Answer {
-    id: u16,
-    outcomes: Vec<Box<dyn Outcome>>,
-    display: String,
-}
-
-#[derive(Debug)]
-struct Query {
-    id: u16,
-    text: String,
-    answers: Vec<Answer>,
-}
-
-#[derive(Debug,PartialEq)]
-enum OutcomeResult {
-    NextQuery(u16),
-    Success,
-    Failure,
-}
-
-trait Outcome {
-    fn handler(&self, display: &str) -> OutcomeResult;
-
-}
-
-
-// go to a different Query based on id
-struct GotoQueryOutcome {
-    goto_ids: HashMap<String, u16>,
-}
-
-impl Outcome for GotoQueryOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        match self.goto_ids.get(&display[..]) {
-            Some(id) => OutcomeResult::NextQuery(*id),
-            None     => OutcomeResult::Failure,
-        }
-    }
-}
-
-
-struct StderrOutcome {}
-
-
-impl Outcome for StderrOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        let bytes = display.as_bytes();
-        match stderr().write_all(bytes) {
-            Ok(_) => OutcomeResult::Success,
-            Err(_) => OutcomeResult::Failure,
-        }
-    }
-}
-
-struct StdoutOutcome {}
-
-impl Outcome for StdoutOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        let bytes = display.as_bytes();
-        match stdout().write_all(bytes) {
-            Ok(_) => OutcomeResult::Success,
-            Err(_) => OutcomeResult::Failure,
-        }
-    }
-}
-
-struct CmdOutcome {
-    cmdargs: [String],
-}
-
-impl CmdOutcome {
-    fn run_cmd(&self) -> Result<String>{
-        let mut builder = Command::new(&self.cmdargs[0]);
-        let _ = &builder.args(&self.cmdargs[1..]);
-        
-        let out = builder.output()?;
-        
-        Ok(String::from_utf8(out.stdout)?)
-    }
-}
-
-impl Outcome for CmdOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        match &self.run_cmd() {
-            Ok(out) =>
-                OutcomeResult::Success,
-            Err(_) =>
-                OutcomeResult::Failure,
-        }
-    }
-}
+use weid::outcome::*;
+use weid::qa::*;
 
 fn prepare_question_text(post: &pbin::PinboardPost) -> String {
     let mut tags = "".to_string();
@@ -143,40 +40,6 @@ fn make_skin() -> MadSkin {
     skin
 }
 
-fn answers_to_asks(answers: &Vec<Answer>) -> HashMap<String, &Answer> {
-    let mut out = HashMap::new();
-    for a in answers.iter() {
-        out.insert(a.id.to_string(), a);
-    };
-    out
-}
-
-
-fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
-    let mut q = t::Question::new(&query.text);
-    for a in &query.answers {
-        q.add_answer(a.id.to_string(), &a.display);
-    };
-    let ans_map = answers_to_asks(&query.answers);
-   
-    let skin = make_skin();
-    let ans = q.ask(&skin).ok()?;
-
-    println!("{:?}", ans);
-
-    ans_map.get(&ans).copied()
-        
-}
-
-fn make_answer(id: u16, display: String) -> Answer{
-    let ans = Answer { 
-        id: id,
-        display: display,
-        outcomes: Vec::new(),
-
-    };
-    ans
-}
 
 fn get_default_outcome() -> Box<dyn Outcome> {
     Box::new(StderrOutcome{})
@@ -220,10 +83,42 @@ fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>) -> Vec<Query> {
     queries
 }
 
+//fn do_weid(mut queries: Vec<Query>) -> Result<()> {
+//    let marp = queries.iter_mut().map(|q| (q.id, q));
+//    let id_map = HashMap::from_iter(marp);
+//    let mut id;
+//    let mut index = 0;
+//    loop {
+//        match queries.get(index) {
+//            None => return Ok(()),
+//            Some(q) => {
+//                id = q.id;
+//            },
+//        }
+//    };
+//}
+
+fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
+    let mut q = t::Question::new(&query.text);
+    for a in &query.answers {
+        q.add_answer(a.id.to_string(), &a.display);
+    };
+    let ans_map = answers_to_asks(&query.answers);
+   
+    let skin = make_skin();
+    let ans = q.ask(&skin).ok()?;
+
+    println!("{:?}", ans);
+
+    ans_map.get(&ans).copied()
+        
+}
+
+
 fn main() {
     let auth: String = env::var("PINBOARD_API_TOKEN").unwrap();
     let p = pbin::PinboardClient::new(auth);
-    //println!("{:?}", p.get_all_posts(vec!(("tag".to_string(), "collapse".to_string()))));
+
     let last = p.get_posts_recent(5).unwrap();
 
     let queries = create_pinboard_queries(&last.posts);
