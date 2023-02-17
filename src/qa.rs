@@ -195,7 +195,7 @@ mod test {
     }
     
     #[test]
-    fn querylist_iterate(){
+    fn querylist_iterate() {
         let mut qlist = QueryList::new();
         let q1 = make_query(1, 2);
         let q2 = make_query(2, 2);
@@ -204,6 +204,13 @@ mod test {
         qlist.append(q2);
         qlist.append(q3);
 
+        let mut outs = Vec::new();
+
+        for o in qlist {
+            outs.push(o.id);
+        };
+
+        assert_eq!(outs, vec![1,2,3]);
 
     }
     
