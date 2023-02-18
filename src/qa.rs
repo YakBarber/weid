@@ -19,6 +19,7 @@ pub struct Answer {
     pub id: AnswerId,
     pub outcomes: Vec<Box<dyn Outcome>>,
     pub display: String,
+    pub output: Option<String>,
 }
 
 #[derive(Debug)]
@@ -46,6 +47,7 @@ pub fn make_answer(id: AnswerId, display: String) -> Answer{
     let ans = Answer { 
         id: id,
         display: display,
+        output: None,
         outcomes: Vec::new(),
     };
     ans

@@ -181,7 +181,8 @@ mod test {
         Answer {
             id: 1,
             outcomes: outcomes,
-            display: "answer happened".to_string(),
+            output: Some("answer happened"),
+            display: "choose me!".to_string(),
         }
     }
 
