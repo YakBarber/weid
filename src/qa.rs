@@ -99,8 +99,6 @@ impl QueryList {
     pub fn get(&self, id: &QueryId) -> Option<&Query> {
         self.queries.get(id)
     }
-
-
 }
 
 impl Iterator for QueryList {

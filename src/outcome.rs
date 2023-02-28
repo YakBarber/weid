@@ -21,15 +21,9 @@ pub enum OutcomeResult {
     Failure,
 }
 
-//TODO: need to rethink this. Needs to do instantaneous and delayed actions...
 pub trait Outcome {
     fn handler(&self, display: &str) -> OutcomeResult;
 }
-
-
-pub struct StderrOutcome {}
-
-pub struct StdoutOutcome {}
 
 pub struct CmdOutcome {
     cmdargs: [String],
@@ -50,26 +44,6 @@ impl Outcome for GotoQueryOutcome {
     }
 }
 
-
-impl Outcome for StderrOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        let bytes = display.as_bytes();
-        match stderr().write_all(bytes) {
-            Ok(_) => OutcomeResult::Success,
-            Err(_) => OutcomeResult::Failure,
-        }
-    }
-}
-
-impl Outcome for StdoutOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        let bytes = display.as_bytes();
-        match stdout().write_all(bytes) {
-            Ok(_) => OutcomeResult::Success,
-            Err(_) => OutcomeResult::Failure,
-        }
-    }
-}
 
 impl CmdOutcome {
     fn run_cmd(&self) -> Result<String>{

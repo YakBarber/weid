@@ -9,6 +9,7 @@
 use std::env;
 use std::string::String;
 use std::collections::HashMap;
+use std::io::{stdout, stderr, Write};
 
 use termimad::MadSkin;
 use termimad as t;
@@ -41,23 +42,12 @@ fn make_skin() -> MadSkin {
 }
 
 
-fn get_default_outcome() -> Box<dyn Outcome> {
-    Box::new(StderrOutcome{})
-}
-
 fn execute_outcomes(answer: &Answer) -> Vec<OutcomeResult> {
     let mut output = Vec::new();
 
-    if (&answer.outcomes).is_empty() {
-        let default = get_default_outcome();
-        let out = default.handler(&answer.display[..]);
+    for outcome in (&answer.outcomes).iter() {
+        let out = outcome.handler(&answer.display[..]);
         output.push(out);
-    }
-    else {
-        for outcome in (&answer.outcomes).iter() {
-            let out = outcome.handler(&answer.display[..]);
-            output.push(out);
-        };
     };
     output
 }
@@ -83,26 +73,41 @@ fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>) -> Vec<Query> {
     queries
 }
 
-fn do_weid(qlist: QueryList) -> Result<()> {
+fn do_output(outs: Vec<&Answer>) -> Result<()> {
+    for ans in outs.iter() {
+        let bytes = ans.display.as_bytes();
+        stdout().write_all(bytes)?
+    };
+    Ok(())
+}
+
+fn execute_answer(answer: Option<&Answer>) -> Option<(String, Vec<OutcomeResult>)> {
+    answer.map(|ans| {
+        let out_result = execute_outcomes(&ans);
+        match &ans.output {
+            None => (ans.display.clone(), out_result),
+            Some(s) => (s.clone(), out_result),
+        }
+    })
+}
+
+fn output_query_results(anss: Vec<String>) {
+    for ans in anss.iter() {
+        stdout().write_all(&ans.as_bytes()).unwrap();
+        stdout().write_all("\n".as_bytes()).unwrap();
+    };
+}
+
+fn do_weid(qlist: QueryList) {
+
+    let mut ans_outs = Vec::new();
 
     for query in qlist {
         let answer = do_query(&query);
-
-        let from_outcomes = match answer {
-            Some(ans) => {
-                execute_outcomes(ans)
-            },
-            None => {
-                println!("{:?}", answer);
-                Vec::new()
-            },
-        };
-        println!("{:?}", from_outcomes);
-
+        let (ans_out, _) = execute_answer(answer).unwrap();
+        ans_outs.push(ans_out);
     };
-
-
-    Ok(())
+    output_query_results(ans_outs);
 }
 
 fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
@@ -181,7 +186,7 @@ mod test {
         Answer {
             id: 1,
             outcomes: outcomes,
-            output: Some("answer happened"),
+            output: Some("answer happened".to_string()),
             display: "choose me!".to_string(),
         }
     }
