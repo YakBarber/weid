@@ -33,6 +33,14 @@ impl Answer {
         };
         output
     }
+
+    pub fn execute(&self) -> (String, Vec<OutcomeResult>) {
+        let out_result = &self.execute_outcomes();
+        match &self.output {
+            None => (self.display.clone(), out_result.clone()),
+            Some(s) => (s.clone(), out_result.clone()),
+        }
+    }
 }
 
 #[derive(Debug)]

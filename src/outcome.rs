@@ -14,7 +14,7 @@ impl Debug for Box<dyn Outcome> {
     }
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,Clone,Copy)]
 pub enum OutcomeResult {
     NextQuery(u16),
     Success,

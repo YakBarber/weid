@@ -71,16 +71,6 @@ fn do_output(outs: Vec<&Answer>) -> Result<()> {
     Ok(())
 }
 
-fn execute_answer(answer: Option<&Answer>) -> Option<(String, Vec<OutcomeResult>)> {
-    answer.map(|ans| {
-        let out_result = ans.execute_outcomes();
-        match &ans.output {
-            None => (ans.display.clone(), out_result),
-            Some(s) => (s.clone(), out_result),
-        }
-    })
-}
-
 fn output_query_results(anss: Vec<String>) {
     for ans in anss.iter() {
         stdout().write_all(&ans.as_bytes()).unwrap();
@@ -94,7 +84,7 @@ fn do_weid(qlist: QueryList) {
 
     for query in qlist {
         let answer = do_query(&query);
-        let (ans_out, _) = execute_answer(answer).unwrap();
+        let (ans_out, _) = answer.unwrap().execute();
         ans_outs.push(ans_out);
     };
     output_query_results(ans_outs);
@@ -184,7 +174,7 @@ mod test {
     #[test]
     fn test_execute_outcomes() -> () {
         let ans = fake_answer();
-        let out = execute_outcomes(&ans);
+        let out = ans.execute_outcomes();
         let right = vec![
             OutcomeResult::Success,
             OutcomeResult::Failure,
