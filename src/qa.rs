@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use std::marker::PhantomData;
 
 use super::util::Result;
-use super::outcome::Outcome;
+use super::outcome::{Outcome, OutcomeResult};
 
 type AnswerId = u16;
 type QueryId = u16;
@@ -20,6 +20,19 @@ pub struct Answer {
     pub outcomes: Vec<Box<dyn Outcome>>,
     pub display: String,
     pub output: Option<String>,
+}
+
+impl Answer {
+
+    pub fn execute_outcomes(&self) -> Vec<OutcomeResult> {
+        let mut output = Vec::new();
+
+        for outcome in (&self.outcomes).iter() {
+            let out = outcome.handler(&self.display[..]);
+            output.push(out);
+        };
+        output
+    }
 }
 
 #[derive(Debug)]

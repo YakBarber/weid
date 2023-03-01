@@ -42,16 +42,6 @@ fn make_skin() -> MadSkin {
 }
 
 
-fn execute_outcomes(answer: &Answer) -> Vec<OutcomeResult> {
-    let mut output = Vec::new();
-
-    for outcome in (&answer.outcomes).iter() {
-        let out = outcome.handler(&answer.display[..]);
-        output.push(out);
-    };
-    output
-}
-
 fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>) -> Vec<Query> {
     let mut queries = Vec::new();
 
@@ -83,7 +73,7 @@ fn do_output(outs: Vec<&Answer>) -> Result<()> {
 
 fn execute_answer(answer: Option<&Answer>) -> Option<(String, Vec<OutcomeResult>)> {
     answer.map(|ans| {
-        let out_result = execute_outcomes(&ans);
+        let out_result = ans.execute_outcomes();
         match &ans.output {
             None => (ans.display.clone(), out_result),
             Some(s) => (s.clone(), out_result),
