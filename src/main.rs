@@ -42,7 +42,7 @@ fn make_skin() -> MadSkin {
 }
 
 
-fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>) -> Vec<Query> {
+fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>, client: &pbin::PinboardClient) -> Vec<Query> {
     let mut queries = Vec::new();
 
 
@@ -51,6 +51,22 @@ fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>) -> Vec<Query> {
         answers.push(make_answer(1, "add tags".to_string()));
         answers.push(make_answer(2, "skip".to_string()));
         answers.push(make_answer(3, "edit description".to_string()));
+        let mut ans4 = make_answer(4, "mark read".to_string());
+        let read_out = pbin::PBOutcome {
+            client: client.to_owned(),
+            post: post.clone(),
+            kind: pbin::PBOutcomeKind::SetRead,
+        };
+        ans4.outcomes.push(Box::new(read_out));
+        answers.push(ans4);
+        let mut ans5 = make_answer(5, "mark unread".to_string());
+        let unread_out = pbin::PBOutcome {
+            client: client.to_owned(),
+            post: post.clone(),
+            kind: pbin::PBOutcomeKind::SetUnread,
+        };
+        ans5.outcomes.push(Box::new(unread_out));
+        answers.push(ans5);
 
         let query: Query = Query {
             id: i as u16,
@@ -111,7 +127,7 @@ fn main() {
 
     let last = p.get_posts_recent(5).unwrap();
 
-    let queries = create_pinboard_queries(&last.posts);
+    let queries = create_pinboard_queries(&last.posts, &p);
 
     let qlist = QueryList::from_iter(queries);
     let out = do_weid(qlist);

@@ -1,18 +1,19 @@
 
-use std::vec::{Vec};
-use std::fmt::{Debug};
+use std::vec::Vec;
+use std::fmt::Debug;
 use reqwest;
-use serde::{Deserialize};
+use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
 use crate::util::Result;
+use crate::outcome::{OutcomeResult, Outcome};
 
 //pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub type PinboardUrl = String;
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug,Deserialize,Clone)]
 pub struct PinboardPost {
 
     pub href: String,
@@ -20,6 +21,7 @@ pub struct PinboardPost {
     pub extended: String,
     pub hash: String,
     pub time: String,
+    pub toread: String,
 
     #[serde(default)]
     pub others: String,
@@ -48,6 +50,7 @@ pub struct PinboardTag {
 
 pub type PinboardTagList = HashMap<String,u32>;
 
+#[derive(Clone)]
 pub struct PinboardClient {
     auth_token: String, // user:1234567890ABCDEABCDE
     format: String, // only "json" right now
@@ -98,6 +101,62 @@ impl PinboardClient {
     pub fn get_all_posts(&self, args: Vec<(String,String)>) -> Result<Vec<PinboardPost>> {
         self.api_get::<Vec<PinboardPost>>("posts/all", &args)
     }
+
+    pub fn update_post(&self, post: PinboardPost) -> Result<()> {
+        let args = vec![
+            ("url".to_string(), post.href), 
+            ("description".to_string(), post.description), 
+            ("extended".to_string(), post.extended), 
+            ("tags".to_string(), post.tag.join(" ")), 
+            ("dt".to_string(), post.time), 
+            ("replace".to_string(), "yes".to_string()), 
+            ("shared".to_string(), "no".to_string()), 
+            ("toread".to_string(), post.toread), 
+        ];
+        self.api_get::<()>("posts/add", &args)?;
+        Ok(())
+    }
 }
 
+pub enum PBOutcomeKind {
+    AddTags(Vec<String>),
+    UpdateDesc(String),
+    SetRead,
+    SetUnread,
+}
+
+pub struct PBOutcome {
+    pub client: PinboardClient,
+    pub post: PinboardPost,
+    pub kind: PBOutcomeKind,
+}
+
+impl Outcome for PBOutcome {
+    fn handler(&self, display: &str) -> OutcomeResult {
+        match &self.kind {
+            PBOutcomeKind::SetUnread => {
+                let mut new = self.post.clone();
+                new.toread = "yes".to_string();
+                match &self.client.update_post(new) {
+                    Ok(_) => OutcomeResult::Success,
+                    Err(_) => OutcomeResult::Failure,
+                }
+            },
+            PBOutcomeKind::SetRead => {
+                let mut new = self.post.clone();
+                new.toread = "no".to_string();
+                match &self.client.update_post(new) {
+                    Ok(_) => OutcomeResult::Success,
+                    Err(_) => OutcomeResult::Failure,
+                }
+            },
+            PBOutcomeKind::AddTags(tags) => {
+                OutcomeResult::Success
+            },
+            PBOutcomeKind::UpdateDesc(desc) => {
+                OutcomeResult::Success
+            },
+        }
+    }
+}
 
