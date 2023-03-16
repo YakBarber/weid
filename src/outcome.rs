@@ -1,70 +1,55 @@
 #![allow(unused_variables)]
 
 use std::fmt::Debug;
-use std::collections::HashMap;
-use std::io::{stdout, stderr, Write};
 use std::process::Command;
+use std::rc::Rc;
+
+use nanoid::nanoid;
 
 use super::util::Result;
 
-impl Debug for Box<dyn Outcome> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        println!("Outcome");
-        Ok(())
+pub type OutcomeId = String;
+
+#[derive(Clone)]
+pub struct Outcome<'a> {
+    _id: String,
+    closure: Rc<dyn Fn() -> Result<String> + 'a>,
+}
+
+impl<'a> Outcome<'a> {
+    pub fn id(&self) -> &OutcomeId {
+        &self._id
     }
-}
-use nanoid::nanoid;
 
-#[derive(Debug,PartialEq,Clone,Copy)]
-pub enum OutcomeResult {
-    NextQuery(u16),
-    Success,
-    Failure,
-}
+    pub fn execute(&self) {
+        (&self.closure)();
+    }
 
-pub trait Outcome {
-    fn handler(&self, display: &str) -> OutcomeResult;
-}
-
-pub struct CmdOutcome {
-    cmdargs: [String],
-}
-
-// go to a different Query based on id
-pub struct GotoQueryOutcome {
-    goto_ids: HashMap<String, u16>,
-}
+    pub fn new<F>(cloj: F) -> Outcome<'a>
+    where
+        F: Fn() -> Result<String>,
+    {
+        Outcome {
+            _id: nanoid!(),
+            closure: Rc::new(cloj),
+        }
+    }
 
 
-impl Outcome for GotoQueryOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        match self.goto_ids.get(&display[..]) {
-            Some(id) => OutcomeResult::NextQuery(*id),
-            None     => OutcomeResult::Failure,
+    pub fn new_cmd(cmd: &'a [&str]) -> Outcome<'a> {
+        Outcome {
+            _id: nanoid!(),
+            closure: Rc::new(|| run_external_cmd(cmd)),
         }
     }
 }
 
-
-impl CmdOutcome {
-    fn run_cmd(&self) -> Result<String>{
-        let mut builder = Command::new(&self.cmdargs[0]);
-        let _ = &builder.args(&self.cmdargs[1..]);
-        
-        let out = builder.output()?;
-        
-        Ok(String::from_utf8(out.stdout)?)
-    }
-}
-
-impl Outcome for CmdOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        match &self.run_cmd() {
-            Ok(out) =>
-                OutcomeResult::Success,
-            Err(_) =>
-                OutcomeResult::Failure,
-        }
-    }
+pub fn run_external_cmd(args: &[&str]) -> Result<String>{
+    let mut builder = Command::new(args[0]);
+    let _ = &builder.args(&args[1..]);
+    
+    let out = builder.output()?;
+    
+    Ok(String::from_utf8(out.stdout)?)
 }
 
