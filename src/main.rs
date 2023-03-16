@@ -18,6 +18,7 @@ use weid::util::Result;
 use weid::pbin;
 use weid::outcome::*;
 use weid::qa::*;
+use weid::querylist::*;
 
 fn prepare_question_text(post: &pbin::PinboardPost) -> String {
     let mut tags = "".to_string();

@@ -13,46 +13,80 @@ use super::outcome::{Outcome, OutcomeResult};
 type AnswerId = u16;
 type QueryId = u16;
 
-#[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Clone, Hash, PartialEq)]
 pub struct Answer {
-    pub id: AnswerId,
-    pub outcomes: Vec<Box<dyn Outcome>>,
     pub display: String,
-    pub output: Option<String>,
+    _id: AnswerId,
+    next_query: Option<QueryId>,
+    outcomes: Vec<OutcomeId>,
 }
 
 impl Answer {
-
-    pub fn execute_outcomes(&self) -> Vec<OutcomeResult> {
-        let mut output = Vec::new();
-
-        for outcome in (&self.outcomes).iter() {
-            let out = outcome.handler(&self.display[..]);
-            output.push(out);
-        };
-        output
-    }
-
-    pub fn execute(&self) -> (String, Vec<OutcomeResult>) {
-        let out_result = &self.execute_outcomes();
-        match &self.output {
-            None => (self.display.clone(), out_result.clone()),
-            Some(s) => (s.clone(), out_result.clone()),
+    pub fn from_text(display: &str) -> Answer {
+        Answer {
+            display: display.to_owned(),
+            _id: nanoid!(),
+            next_query: None,
+            outcomes: Vec::new(),
         }
     }
+
+    pub fn id(&self) -> &AnswerId {
+        &self._id
+    }
+
+    pub fn outcomes(&self) -> &Vec<OutcomeId> {
+        &self.outcomes
+    }
+
+    pub fn next_query(&mut self, qid: &QueryId) {
+        self.next_query = Some(qid.clone());
+    }
+
+    pub fn add_outcome(&mut self, oid: &OutcomeId) {
+        self.outcomes.push(oid.clone());
+    }
 }
 
-#[derive(Debug)]
-pub struct Query {
-    pub id: QueryId,
-    pub text: String,
-    pub answers: Vec<Answer>,
+#[derive(Clone)]
+pub enum QuerySeed {
+    Text(String),
+    FromOutcome(OutcomeId),
 }
 
-impl PartialEq for Query {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+#[derive(Clone)]
+pub struct Query { 
+    _id: QueryId,
+    seed: QuerySeed,
+    answers: Option<Vec<AnswerId>>,
+}
+
+impl Query {
+    pub fn from_text(display: &str) -> Query {
+        Query {
+            seed: QuerySeed::Text(display.to_owned()),
+            _id: nanoid!(),
+            answers: None,
+        }
+    }
+
+    pub fn from_outcome(outcome: OutcomeId) -> Query {
+        Query {
+            seed: QuerySeed::FromOutcome(outcome),
+            _id: nanoid!(),
+            answers: None,
+        }
+    }
+
+    pub fn id(&self) -> &QueryId {
+        &self._id
+    }
+
+    pub fn add_answer(&mut self, ans: &AnswerId) {
+        match &mut self.answers {
+            None => self.answers = Some(vec![ans.clone()]),
+            Some(vec) => vec.push(ans.clone()),
+        };
     }
 }
 
@@ -62,85 +96,6 @@ pub fn answers_to_asks(answers: &Vec<Answer>) -> HashMap<String, &Answer> {
         out.insert(a.id.to_string(), a);
     };
     out
-}
-
-pub fn make_answer(id: AnswerId, display: String) -> Answer{
-    let ans = Answer { 
-        id: id,
-        display: display,
-        output: None,
-        outcomes: Vec::new(),
-    };
-    ans
-}
-
-#[derive(Debug)]
-pub struct QueryList {
-    position: usize,
-    queries: HashMap<QueryId, Query>,
-    key_order: VecDeque<QueryId>,
-}
-
-impl QueryList {
-    pub fn new() -> QueryList {
-        QueryList {
-            position: 0,
-            queries: HashMap::new(),
-            key_order: VecDeque::new(),
-        }
-    }
-
-    pub fn append(&mut self, query: Query) {
-        let id = query.id;
-        self.queries.insert(id, query); //don't allow overwrite?
-        self.key_order.push_back(id);
-    }
-
-    pub fn jump(&mut self, query_id: QueryId) -> Result<usize> {
-
-        match self.index(&query_id) {
-            Ok(index) => {
-                self.position = index;
-                Ok(index)
-            },
-            Err(_) => Err("Requested Query is not available.".into()),
-        }
-    }
-
-    // no I will NOT `impl std::ops::Index`.
-    fn index(&self, query_id: &QueryId) -> Result<usize> {
-        match self.key_order.binary_search(&query_id) {
-            Ok(index) => {
-                Ok(index)
-            },
-            Err(e) => Err("Out of bounds.".into()),
-        }
-    }
-
-    pub fn get(&self, id: &QueryId) -> Option<&Query> {
-        self.queries.get(id)
-    }
-}
-
-impl Iterator for QueryList {
-    type Item = Query;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let out_id = self.key_order.get(self.position)?;
-        let out = self.queries.remove(&(*out_id as QueryId))?;
-        self.position = self.position + 1;
-        Some(out)
-    }
-}
-
-impl FromIterator<Query> for QueryList {
-    fn from_iter<I: IntoIterator<Item=Query>>(iter: I) -> Self {
-        let mut out = QueryList::new();
-        for item in iter {
-            out.append(item);
-        };
-        out
-    }
 }
 
 #[cfg(test)]
