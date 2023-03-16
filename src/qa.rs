@@ -92,14 +92,6 @@ impl Query {
     }
 }
 
-pub fn answers_to_asks(answers: &Vec<Answer>) -> HashMap<String, &Answer> {
-    let mut out = HashMap::new();
-    for a in answers.iter() {
-        out.insert(a.id.to_string(), a);
-    };
-    out
-}
-
 #[cfg(test)]
 mod test {
 
