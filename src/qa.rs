@@ -7,11 +7,13 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
 
-use super::util::Result;
-use super::outcome::{Outcome, OutcomeResult};
+use nanoid::nanoid;
 
-type AnswerId = u16;
-type QueryId = u16;
+use super::util::Result;
+use super::outcome::*;
+
+pub type AnswerId = String;
+pub type QueryId = String;
 
 #[derive(Clone, Hash, PartialEq)]
 pub struct Answer {

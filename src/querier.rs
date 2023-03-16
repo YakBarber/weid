@@ -2,6 +2,8 @@
 use super::qa::*;
 use super::querylist::*;
 
+use super::outcome::OutcomeId;
+
 pub struct Querier<'a> {
     ql: QueryList<'a>,
     active_query: Option<QueryId>,
