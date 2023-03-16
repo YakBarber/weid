@@ -118,45 +118,17 @@ impl PinboardClient {
     }
 }
 
-pub enum PBOutcomeKind {
-    AddTags(Vec<String>),
-    UpdateDesc(String),
-    SetRead,
-    SetUnread,
+pub fn set_unread(client: PinboardClient, post: PinboardPost) -> Result<()> {
+    let mut new = post.clone();
+    new.toread = "yes".to_string();
+    &client.update_post(new)
 }
 
-pub struct PBOutcome {
-    pub client: PinboardClient,
-    pub post: PinboardPost,
-    pub kind: PBOutcomeKind,
+pub fn set_read(client: PinboardClient, post: PinboardPost) -> Result<()> {
+    let mut new = post.clone();
+    new.toread = "no".to_string();
+    &client.update_post(new)
 }
 
-impl Outcome for PBOutcome {
-    fn handler(&self, display: &str) -> OutcomeResult {
-        match &self.kind {
-            PBOutcomeKind::SetUnread => {
-                let mut new = self.post.clone();
-                new.toread = "yes".to_string();
-                match &self.client.update_post(new) {
-                    Ok(_) => OutcomeResult::Success,
-                    Err(_) => OutcomeResult::Failure,
-                }
-            },
-            PBOutcomeKind::SetRead => {
-                let mut new = self.post.clone();
-                new.toread = "no".to_string();
-                match &self.client.update_post(new) {
-                    Ok(_) => OutcomeResult::Success,
-                    Err(_) => OutcomeResult::Failure,
-                }
-            },
-            PBOutcomeKind::AddTags(tags) => {
-                OutcomeResult::Success
-            },
-            PBOutcomeKind::UpdateDesc(desc) => {
-                OutcomeResult::Success
-            },
-        }
-    }
-}
+
 
