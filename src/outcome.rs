@@ -13,6 +13,7 @@ impl Debug for Box<dyn Outcome> {
         Ok(())
     }
 }
+use nanoid::nanoid;
 
 #[derive(Debug,PartialEq,Clone,Copy)]
 pub enum OutcomeResult {
