@@ -60,7 +60,7 @@ pub enum QuerySeed {
 pub struct Query { 
     _id: QueryId,
     seed: QuerySeed,
-    answers: Option<Vec<AnswerId>>,
+    answers: Option<Vec<AnswerId>>, //this is bad
 }
 
 impl Query {
@@ -89,6 +89,14 @@ impl Query {
             None => self.answers = Some(vec![ans.clone()]),
             Some(vec) => vec.push(ans.clone()),
         };
+    }
+
+    pub fn answers(&self) -> Option<&Vec<AnswerId>> { //this is bad
+        None
+    }
+
+    pub fn get_seed(&self) -> Option<&QuerySeed> {
+        None
     }
 }
 

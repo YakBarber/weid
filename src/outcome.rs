@@ -27,7 +27,7 @@ impl<'a> Outcome<'a> {
 
     pub fn new<F>(cloj: F) -> Outcome<'a>
     where
-        F: Fn() -> Result<String>,
+        F: Fn() -> Result<String> + 'a,
     {
         Outcome {
             _id: nanoid!(),
