@@ -7,7 +7,6 @@ use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
 use crate::util::Result;
-use crate::outcome::Outcome;
 
 pub type PinboardUrl = String;
 
@@ -116,18 +115,18 @@ impl PinboardClient {
     }
 }
 
-pub fn set_unread(client: PinboardClient, post: PinboardPost) -> Result<()> {
+pub fn set_unread(client: PinboardClient, post: PinboardPost) -> Result<String> {
     let mut new = post.clone();
     new.toread = "yes".to_string();
-    &client.update_post(new)?;
-    Ok(())
+    client.update_post(new)?;
+    Ok("".to_string())
 }
 
-pub fn set_read(client: PinboardClient, post: PinboardPost) -> Result<()> {
+pub fn set_read(client: PinboardClient, post: PinboardPost) -> Result<String> {
     let mut new = post.clone();
     new.toread = "no".to_string();
-    &client.update_post(new)?;
-    Ok(())
+    client.update_post(new)?;
+    Ok("".to_string())
 }
 
 

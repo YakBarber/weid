@@ -1,6 +1,5 @@
 #![allow(unused_variables)]
 
-use std::fmt::Debug;
 use std::process::Command;
 use std::rc::Rc;
 
@@ -21,8 +20,8 @@ impl<'a> Outcome<'a> {
         &self._id
     }
 
-    pub fn execute(&self) {
-        (&self.closure)();
+    pub fn execute(&self) -> Result<String> {
+        (&self.closure)()
     }
 
     pub fn new<F>(cloj: F) -> Outcome<'a>
