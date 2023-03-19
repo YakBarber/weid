@@ -93,11 +93,11 @@ impl Query {
     }
 
     pub fn answers(&self) -> &Vec<AnswerId> {
-        todo!()
+        &self.answers
     }
 
     pub fn get_seed(&self) -> &QuerySeed {
-        todo!()
+        &self.seed
     }
 }
 
