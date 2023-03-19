@@ -158,8 +158,8 @@ impl<'a> QueryList<'a> {
             //make sure all outcomes exist
             QLChange::Answer(ans) => {
                 for o in ans.outcomes() {
-                    if !&self.outcomes.contains_key(o) {
-                        return false
+                    if self.outcomes.contains_key(o) {
+                        return true
                     };
                 };
             },
@@ -168,13 +168,13 @@ impl<'a> QueryList<'a> {
             QLChange::Query(query) => {
                 let ans = &query.answers();
                 for a in ans.iter() {
-                    if !&self.answers.contains_key(a) {
-                        return false
+                    if self.answers.contains_key(a) {
+                        return true
                     };
                 };
                 if let QuerySeed::FromOutcome(o) = query.get_seed() {
-                    if !&self.outcomes.contains_key(&o[..]) {
-                        return false
+                    if self.outcomes.contains_key(&o[..]) {
+                        return true
                     };
                 };
             },
