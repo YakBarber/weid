@@ -19,6 +19,7 @@ use weid::pbin;
 use weid::outcome::*;
 use weid::qa::*;
 use weid::querylist::*;
+use weid::querier::*;
 
 fn prepare_question_text(post: &pbin::PinboardPost) -> String {
     let mut tags = "".to_string();
@@ -37,44 +38,39 @@ fn prepare_question_text(post: &pbin::PinboardPost) -> String {
     )
 }
 
-fn make_skin() -> MadSkin {
-    let skin = MadSkin::default();
-    skin
-}
 
-
-fn create_pinboard_queries(posts: &Vec<pbin::PinboardPost>, client: &pbin::PinboardClient) -> Vec<Query> {
+fn create_pinboard_queries<'a>(posts: &Vec<pbin::PinboardPost>, client: &pbin::PinboardClient) -> QueryList<'a> {
 
     let mut ql = QueryList::new();
 
     for (i,post) in posts.iter().enumerate() {
 
         let query = Query::from_text(&prepare_question_text(post));
-        let qid = ql.insert_query(query);
+        let qid = ql.insert_query(query).unwrap();
 
         let a1 = Answer::from_text("add_tags");
-        let a1id = ql.insert_answer(a1);
-        ql.link_answer_to_query(a1id, qid);
+        let a1id = ql.insert_answer(a1).unwrap();
+        ql.link_answer_to_query(&a1id, &qid);
 
         let a2 = Answer::from_text("skip");
-        let a2id = ql.insert_answer(a2);
-        ql.link_answer_to_query(a2id, qid);
+        let a2id = ql.insert_answer(a2).unwrap();
+        ql.link_answer_to_query(&a2id, &qid);
 
         let a3 = Answer::from_text("edit description");
-        let a3id = ql.insert_answer(a3);
-        ql.link_answer_to_query(a3id, qid);
+        let a3id = ql.insert_answer(a3).unwrap();
+        ql.link_answer_to_query(&a3id, &qid);
 
-        let a4 = Answer::from_text("mark read");
-        let o4 = Outcome::new(|| pbin::set_read(client, post));
-        a4.add_outcome(o4);
-        let a4id = ql.insert_answer(a4);
-        ql.link_answer_to_query(a4id, qid);
+        let mut a4 = Answer::from_text("mark read");
+        let o4 = Outcome::new(|| pbin::set_read(client.clone(), post.clone()));
+        a4.add_outcome(o4.id());
+        let a4id = ql.insert_answer(a4).unwrap();
+        ql.link_answer_to_query(&a4id, &qid);
 
-        let a5 = Answer::from_text("mark unread");
-        let o5 = Outcome::new(|| pbin::set_unread(client, post));
-        a5.add_outcome(o5);
-        let a5id = ql.insert_answer(a5);
-        ql.link_answer_to_query(a5id, qid);
+        let mut a5 = Answer::from_text("mark unread");
+        let o5 = Outcome::new(|| pbin::set_unread(client.clone(), post.clone()));
+        a5.add_outcome(o5.id());
+        let a5id = ql.insert_answer(a5).unwrap();
+        ql.link_answer_to_query(&a5id, &qid);
     };
 
     ql
@@ -96,30 +92,14 @@ fn output_query_results(anss: Vec<String>) {
     };
 }
 
-fn do_weid(qlist: QueryList) {
+fn do_weid(qlist: QueryList) -> Result<()> {
+    let mut querier = Querier::new(qlist);
 
-    let mut ans_outs = Vec::new();
-
-    for query in qlist {
-        let answer = do_query(&query);
-        let (ans_out, outcomes) = answer.unwrap().execute();
-        for out in &outcomes {
+    while let Ok(result) = &querier.do_next_query() {
+        todo!();
     };
-    output_query_results(ans_outs);
-}
 
-fn do_query<'a>(query: &'a Query) -> Option<&'a Answer> {
-    let mut q = t::Question::new(&query.text);
-    for a in &query.answers {
-        q.add_answer(a.id.to_string(), &a.display);
-    };
-    let ans_map = answers_to_asks(&query.answers);
-   
-    let skin = make_skin();
-    let ans = q.ask(&skin).ok()?;
-
-    ans_map.get(&ans).copied()
-        
+    Ok(())
 }
 
 
@@ -134,50 +114,6 @@ fn main() {
     let out = do_weid(ql);
 
 }
-
-//#[cfg(test)]
-//mod test {
-//
-//    use super::*;
-//
-//    fn fake_pin() -> pbin::PinboardPost {
-//        pbin::PinboardPost {
-//            href: "http://butts.poop".to_string(),
-//            description: "this is the description".to_string(),
-//            extended: "this is the extended".to_string(),
-//            hash: "abcde123456789".to_string(),
-//            time: "this is the timestamp".to_string(),
-//            others: "".to_string(),
-//            tag: vec!["tag1".to_string(), "tag2".to_string()],
-//        }
-//    }
-//
-//    fn fake_answer() -> Answer {
-//        let outcomes:Vec<Box<dyn Outcome>> = vec![
-//            Box::new(SuccessOutcome {}),
-//            Box::new(FailureOutcome {}),
-//            Box::new(NextQueryOutcome {}),
-//        ];
-//        Answer {
-//            id: 1,
-//            outcomes: outcomes,
-//            output: Some("answer happened".to_string()),
-//            display: "choose me!".to_string(),
-//        }
-//    }
-//
-//    #[test]
-//    fn test_execute_outcomes() -> () {
-//        let ans = fake_answer();
-//        let out = ans.execute_outcomes();
-//        let right = vec![
-//            OutcomeResult::Success,
-//            OutcomeResult::Failure,
-//            OutcomeResult::NextQuery(2),
-//        ];
-//        assert_eq!(out, right);
-//    }
-//}
 
 
 
