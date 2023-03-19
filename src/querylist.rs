@@ -2,8 +2,7 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
-
-use nanoid::nanoid;
+use std::error::Error;
 
 use super::util::Result;
 use super::outcome::{Outcome, OutcomeId};
@@ -68,49 +67,52 @@ impl<'a> QueryList<'a> {
         self.make_change(change)
     }
 
-    pub fn insert_outcome(&mut self, outcome: Outcome) -> Option<OutcomeId> {
+    pub fn insert_outcome(&mut self, outcome: Outcome<'a>) -> Option<OutcomeId> {
         let change = QLChange::Outcome(outcome);
         self.make_change(change)
     }
 
     pub fn link_answer_to_query(&mut self, aid: &AnswerId, qid: &QueryId) -> Option<QueryId> {
-        let mut new_query = self.get_query(qid)?.clone();
+        let mut new_query = self.get_query(qid).ok()?.clone();
         new_query.add_answer(aid);
         self.insert_query(new_query)
     }
 
     pub fn link_outcome_to_answer(&mut self, oid: &OutcomeId, aid: &AnswerId) -> Option<AnswerId> {
-        let mut new_answer = self.get_answer(aid)?.clone();
-        new_answer.add_outcome(aid);
+        let mut new_answer = self.get_answer(aid).ok()?.clone();
+        new_answer.add_outcome(oid);
         self.insert_answer(new_answer)
     }
  
-    pub fn get_query(&self, qid: &QueryId) -> Option<&Query> {
-        self.queries.get(qid)
+    pub fn get_query(&self, qid: &QueryId) -> Result<&Query> {
+        self.queries.get(qid).ok_or(Box::<dyn Error>::from("No Query by that QueryId"))
     }
 
-    pub fn get_answer(&self, aid: &AnswerId) -> Option<&Answer> {
-        self.answers.get(aid)
+    pub fn get_answer(&self, aid: &AnswerId) -> Result<&Answer> {
+        self.answers.get(aid).ok_or(Box::<dyn Error>::from("No Answer by that AnswerId"))
     }
 
-    pub fn get_outcome(&self, oid: &OutcomeId) -> Option<&Outcome> {
-        self.outcomes.get(oid)
+    pub fn get_outcome(&self, oid: &OutcomeId) -> Result<&Outcome> {
+        self.outcomes.get(oid).ok_or(Box::<dyn Error>::from("No Outcome by that OutcomeId"))
     }
 
-    fn make_change(&mut self, change: QLChange) -> Option<String> {
+    fn make_change(&mut self, change: QLChange<'a>) -> Option<String> {
         if self.validate_change(&change) {
             match change {
                 QLChange::Query(q) => {
-                    self.queries.insert((&q.id()).to_string(), q);
-                    Some(&q.id().to_string())
+                    let qid = &q.id().clone();
+                    self.queries.insert(qid.to_string(), q);
+                    Some(qid.to_string())
                 },
                 QLChange::Answer(a) => {
-                    self.answers.insert(a.id().clone(), a);
-                    Some(a.id().clone())
+                    let aid = &a.id().clone();
+                    self.answers.insert(aid.to_string(), a);
+                    Some(aid.to_string())
                 },
                 QLChange::Outcome(o) => {
-                    self.outcomes.insert(o.id().clone(), o);
-                    Some(o.id().clone())
+                    let oid = &o.id().clone();
+                    self.outcomes.insert(oid.to_string(), o);
+                    Some(oid.to_string())
                 },
             }
         }
@@ -162,14 +164,13 @@ impl<'a> QueryList<'a> {
 
             //make sure all answers and outcomes exist, if referenced
             QLChange::Query(query) => {
-                if let Some(ans) = &query.answers() {
-                    for a in ans.iter() {
-                        if !&self.answers.contains_key(a) {
-                            return false
-                        };
+                let ans = &query.answers();
+                for a in ans.iter() {
+                    if !&self.answers.contains_key(a) {
+                        return false
                     };
                 };
-                if let Some(QuerySeed::FromOutcome(o)) = query.get_seed() {
+                if let QuerySeed::FromOutcome(o) = query.get_seed() {
                     if !&self.outcomes.contains_key(&o[..]) {
                         return false
                     };
@@ -189,18 +190,17 @@ impl<'a> QueryList<'a> {
         };
 
         for q in new_ql.queries.values(){
-            if let Some(QuerySeed::FromOutcome(o)) = &q.get_seed() {
+            if let QuerySeed::FromOutcome(o) = &q.get_seed() {
                 if !new_ql.outcomes.contains_key(o) {
                     return false
                 };
             };
-            if let Some(anss) = &q.answers() {
-                for a in anss.iter() {
-                    if !new_ql.answers.contains_key(a) {
-                        return false
-                    };
+            let anss = &q.answers();
+            for a in anss.iter() {
+                if !new_ql.answers.contains_key(a) {
+                    return false
                 };
-            }
+            };
         };
         true
     }
@@ -210,6 +210,7 @@ impl<'a> QueryList<'a> {
 mod test {
     use super::*;
 
+    // nothing is linked or referenced here so it's useless, but it is valid
     fn make_simple_querylist<'a>() -> QueryList<'a> {
         let mut q1 = Query::from_text("a question");
         let mut a1 = Answer::from_text("an answer");
@@ -222,9 +223,78 @@ mod test {
 
     }
 
+    #[test]
+    fn validate_validation() {
+        //create known-good querylist
+        let mut ql = make_simple_querylist();
+
+        assert!(QueryList::validate(&ql));
+
+        // prep some new changes
+        let bad_o_1 = Outcome::new(|| todo!()); //the closures shouldn't run
+        let bad_o_2 = Outcome::new(|| todo!());
+
+        let bad_q_1 = Query::from_outcome(bad_o_1.id().to_owned());
+        let mut bad_q_2 = Query::from_text("asdf");
+
+        let mut bad_a_1 = Answer::from_text("some answer");
+
+        bad_q_2.add_answer(&bad_a_1.id());
+        bad_a_1.add_outcome(&bad_o_2.id());
+
+        // adding the queries should both fail as-is
+        assert_eq!(None, ql.insert_query(bad_q_1.clone()));
+        assert_eq!(None, ql.insert_query(bad_q_2.clone()));
+
+        // adding the answer should also fail as-is
+        assert_eq!(None, ql.insert_answer(bad_a_1.clone()));
+
+        // add in the first outcome, and the query referencing it should be allowed
+        ql.insert_outcome(bad_o_1);
+        assert_eq!(Some(bad_q_1.id().clone()), ql.insert_query(bad_q_1));
+
+        // and it the whole thing should still be valid as well
+        assert!(QueryList::validate(&ql));
+
+        // if we backdoor the other query in, the whole thing should now be invalid
+        ql.queries.insert(bad_q_2.id().to_owned(), bad_q_2);
+        assert!(!QueryList::validate(&ql));
+
+        // inserting the referenced answer should still fail because its outcome isn't present
+        assert_eq!(None, ql.insert_answer(bad_a_1.clone()));
+
+        // if we backdoor the answer in, the whole thing is still invalid
+        ql.answers.insert(bad_a_1.id().to_owned(), bad_a_1);
+        assert!(!QueryList::validate(&ql));
+
+        //only by inserting the missing outcome does the whole thing validate
+        ql.insert_outcome(bad_o_2);
+        assert!(QueryList::validate(&ql));
+
+    }
 
     #[test]
-    fn check_querylist_init_update() {
-        let mut new = QueryList::new();
+    fn validate_linking() {
+        // create minimal querylist
+        let mut ql = make_simple_querylist();
+        let aid = ql.answers.keys().next().unwrap().clone();
+        let qid = ql.queries.keys().next().unwrap().clone();
+        let oid = ql.outcomes.keys().next().unwrap().clone();
+
+        // link the answer to the query, make sure nothing else changes
+        ql.link_answer_to_query(&aid, &qid);
+        assert!(QueryList::validate(&ql));
+        assert_eq!(aid.to_owned(), ql.queries.get(&qid).unwrap().answers()[0]);
+        assert_eq!(1, ql.queries.len());
+        assert_eq!(1, ql.answers.len());
+        assert_eq!(1, ql.outcomes.len());
+        
+        // link the outcome to the answer, make sure nothing else changes
+        ql.link_outcome_to_answer(&aid, &qid);
+        assert!(QueryList::validate(&ql));
+        assert_eq!(oid.to_owned(), ql.answers.get(&aid).unwrap().outcomes()[0]);
+        assert_eq!(1, ql.queries.len());
+        assert_eq!(1, ql.answers.len());
+        assert_eq!(1, ql.outcomes.len());
     }
 }
