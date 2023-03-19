@@ -151,15 +151,13 @@ impl<'a> QueryList<'a> {
         match change {
             
             //nothing to check when adding an outcome
-            QLChange::Outcome(_) => {
-                return true
-            },
+            QLChange::Outcome(_) => { },
             
             //make sure all outcomes exist
             QLChange::Answer(ans) => {
                 for o in ans.outcomes() {
-                    if self.outcomes.contains_key(o) {
-                        return true
+                    if !self.outcomes.contains_key(o) {
+                        return false
                     };
                 };
             },
@@ -168,18 +166,18 @@ impl<'a> QueryList<'a> {
             QLChange::Query(query) => {
                 let ans = &query.answers();
                 for a in ans.iter() {
-                    if self.answers.contains_key(a) {
-                        return true
+                    if !self.answers.contains_key(a) {
+                        return false
                     };
                 };
                 if let QuerySeed::FromOutcome(o) = query.get_seed() {
-                    if self.outcomes.contains_key(&o[..]) {
-                        return true
+                    if !self.outcomes.contains_key(&o[..]) {
+                        return false
                     };
                 };
             },
         };
-        false
+        true
     }
 
     fn validate(new_ql: &'a QueryList) -> bool {

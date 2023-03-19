@@ -39,7 +39,7 @@ fn prepare_question_text(post: &pbin::PinboardPost) -> String {
 }
 
 
-fn create_pinboard_queries<'a>(posts: &Vec<pbin::PinboardPost>, client: &pbin::PinboardClient) -> QueryList<'a> {
+fn create_pinboard_queries<'a>(posts: &'a Vec<pbin::PinboardPost>, client: &'a pbin::PinboardClient) -> QueryList<'a> {
 
     let mut ql = QueryList::new();
 
@@ -63,12 +63,14 @@ fn create_pinboard_queries<'a>(posts: &Vec<pbin::PinboardPost>, client: &pbin::P
         let mut a4 = Answer::from_text("mark read");
         let o4 = Outcome::new(|| pbin::set_read(client.clone(), post.clone()));
         a4.add_outcome(o4.id());
+        ql.insert_outcome(o4);
         let a4id = ql.insert_answer(a4).unwrap();
         ql.link_answer_to_query(&a4id, &qid);
 
         let mut a5 = Answer::from_text("mark unread");
         let o5 = Outcome::new(|| pbin::set_unread(client.clone(), post.clone()));
         a5.add_outcome(o5.id());
+        ql.insert_outcome(o5);
         let a5id = ql.insert_answer(a5).unwrap();
         ql.link_answer_to_query(&a5id, &qid);
     };
