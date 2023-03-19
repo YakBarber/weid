@@ -2,6 +2,7 @@
 
 use std::process::Command;
 use std::rc::Rc;
+use std::fmt;
 
 use nanoid::nanoid;
 
@@ -13,6 +14,12 @@ pub type OutcomeId = String;
 pub struct Outcome<'a> {
     _id: String,
     closure: Rc<dyn Fn() -> Result<String> + 'a>,
+}
+
+impl<'a> fmt::Debug for Outcome<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Outcome #{:?}", self._id)
+    }
 }
 
 impl<'a> Outcome<'a> {
