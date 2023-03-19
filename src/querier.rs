@@ -11,6 +11,17 @@ use super::util::Result;
 
 use super::outcome::OutcomeId;
 
+pub struct QueryResult {
+    query: QueryId,
+    answer: AnswerId,
+    outcome_results: Vec<OutcomeResult>,
+}
+
+pub struct OutcomeResult {
+    outcome: OutcomeId,
+    output: String,
+}
+
 pub enum QuerierState {
     Inactive,
     OnQuery(QueryId),
@@ -59,9 +70,14 @@ impl<'a> Querier<'a> {
         //}
     }
 
-    fn execute_outcome(&mut self, oid: OutcomeId) -> Result<String> {
+    fn execute_outcome(&mut self, oid: OutcomeId) -> Result<OutcomeResult> {
         let outcome = self.ql.get_outcome(&oid)?;
-        outcome.execute()
+        let out = outcome.execute()?;
+        Ok(OutcomeResult{
+            outcome: oid,
+            output: out,
+        })
+
     }
 
     fn execute_query(&mut self, qid: &QueryId) -> Result<AnswerId> {
