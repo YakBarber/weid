@@ -15,7 +15,7 @@ use super::outcome::*;
 pub type AnswerId = String;
 pub type QueryId = String;
 
-#[derive(Clone, Hash, PartialEq)]
+#[derive(Clone, Hash, PartialEq, Debug)]
 pub struct Answer {
     pub display: String,
     _id: AnswerId,
@@ -54,13 +54,13 @@ impl Answer {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum QuerySeed {
     Text(String),
     FromOutcome(OutcomeId),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Query { 
     _id: QueryId,
     seed: QuerySeed,

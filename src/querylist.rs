@@ -3,18 +3,20 @@
 
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt::Debug;
 
 use super::util::Result;
 use super::outcome::{Outcome, OutcomeId};
 use super::qa::*;
 
+#[derive(Debug)]
 enum QLChange<'a> {
     Query(Query),
     Answer(Answer),
     Outcome(Outcome<'a>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct QueryList<'a> {
     queries: HashMap<QueryId, Query>,
     answers: HashMap<AnswerId, Answer>,
