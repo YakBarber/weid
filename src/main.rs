@@ -94,11 +94,15 @@ fn output_query_results(anss: Vec<String>) {
     };
 }
 
-fn do_weid(qlist: QueryList) -> Result<()> {
-    let mut querier = Querier::new(qlist);
-
-    while let Ok(result) = &querier.do_next_query() {
-        todo!();
+fn do_weid(ql: &mut QueryList) -> Result<()> {
+    let mut querier = Querier::new(ql.clone());
+    loop {
+        if let Ok(result) = &querier.do_next_query() {
+            todo!();
+        }
+        else {
+            break;
+        };
     };
 
     Ok(())
@@ -111,9 +115,9 @@ fn main() {
 
     let last = p.get_posts_recent(5).unwrap();
 
-    let ql = create_pinboard_queries(&last.posts, &p);
+    let mut ql = create_pinboard_queries(&last.posts, &p);
 
-    let out = do_weid(ql);
+    let out = do_weid(&mut ql);
 
 }
 

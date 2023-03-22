@@ -75,27 +75,31 @@ impl<'a> QueryList<'a> {
     }
 
     pub fn link_answer_to_query(&mut self, aid: &AnswerId, qid: &QueryId) -> Option<QueryId> {
-        let mut new_query = self.get_query(qid).ok()?.clone();
+        let mut new_query = self.get_query(qid)?.clone();
         new_query.add_answer(aid);
         self.insert_query(new_query)
     }
 
     pub fn link_outcome_to_answer(&mut self, oid: &OutcomeId, aid: &AnswerId) -> Option<AnswerId> {
-        let mut new_answer = self.get_answer(aid).ok()?.clone();
+        let mut new_answer = self.get_answer(aid)?.clone();
         new_answer.add_outcome(oid);
         self.insert_answer(new_answer)
     }
  
-    pub fn get_query(&self, qid: &QueryId) -> Result<&Query> {
-        self.queries.get(qid).ok_or(Box::<dyn Error>::from("No Query by that QueryId"))
+    pub fn get_query(&self, qid: &QueryId) -> Option<&Query> {
+        self.queries.get(qid)
     }
 
-    pub fn get_answer(&self, aid: &AnswerId) -> Result<&Answer> {
-        self.answers.get(aid).ok_or(Box::<dyn Error>::from("No Answer by that AnswerId"))
+    pub fn get_answer(&self, aid: &AnswerId) -> Option<&Answer> {
+        self.answers.get(aid)
     }
 
-    pub fn get_outcome(&self, oid: &OutcomeId) -> Result<&Outcome> {
-        self.outcomes.get(oid).ok_or(Box::<dyn Error>::from("No Outcome by that OutcomeId"))
+    pub fn get_outcome(&self, oid: &OutcomeId) -> Option<&Outcome> {
+        self.outcomes.get(oid)
+    }
+
+    pub fn get_query_ids(&self) -> Vec<QueryId> {
+        self.queries.keys().map(|k| k.to_owned()).collect()
     }
 
     fn make_change(&mut self, change: QLChange<'a>) -> Option<String> {
