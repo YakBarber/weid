@@ -70,11 +70,11 @@ impl<'a> Querier<'a> {
         //}
     }
 
-    fn execute_outcome(&mut self, oid: OutcomeId) -> Result<OutcomeResult> {
-        let outcome = self.ql.get_outcome(&oid)?;
+    fn execute_outcome(&mut self, oid: &OutcomeId) -> Result<OutcomeResult> {
+        let outcome = self.ql.get_outcome(oid)?;
         let out = outcome.execute()?;
         Ok(OutcomeResult{
-            outcome: oid,
+            outcome: oid.clone(),
             output: out,
         })
 
