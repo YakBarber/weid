@@ -9,6 +9,11 @@ use anyhow::Result;
 
 pub type PinboardUrl = String;
 
+#[derive(Debug,Deserialize)]
+pub struct PinboardResult {
+    pub result_code: String,
+}
+
 #[derive(Debug,Deserialize,Clone)]
 pub struct PinboardPost {
 
@@ -76,7 +81,7 @@ impl PinboardClient {
     fn api_get<T: DeserializeOwned>(&self, meth: &str, args: &Vec<(String, String)> ) -> Result<T> {
         let url = self.make_api_url(meth, args);
         let r = reqwest::blocking::get(url)?.text()?;
-        serde_json::from_str(&r[..]).map_err(|e| e.into())
+        Ok(serde_json::from_str(&r[..])?)
     }
 
     pub fn get_posts_recent(&self, count: u32) -> Result<PinboardPosts> {
@@ -109,7 +114,7 @@ impl PinboardClient {
             ("shared".to_string(), "no".to_string()), 
             ("toread".to_string(), post.toread), 
         ];
-        self.api_get::<()>("posts/add", &args)?;
+        self.api_get::<PinboardResult>("posts/add", &args)?;
         Ok(())
     }
 }
