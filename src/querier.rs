@@ -5,10 +5,11 @@ use std::fmt::Debug;
 
 use termimad::MadSkin;
 use termimad as t;
+use anyhow::{Context, Result};
 
 use super::qa::*;
 use super::querylist::*;
-use super::util::Result;
+
 
 use super::outcome::OutcomeId;
 
@@ -62,11 +63,11 @@ impl<'a> Querier<'a> {
                 let q_id = n.id().clone();
                 let ans_id = self.execute_query(n)?;
 
-                let ans = self.ql.get_answer(&ans_id).ok_or("can't find answer")?;
+                let ans = self.ql.get_answer(&ans_id).context("can't find answer")?;
                 let mut ors = Vec::new();
 
                 for o_id in ans.outcomes() {
-                    let r = self.execute_outcome(o_id)?;
+                    let r = self.execute_outcome(o_id).context("outcome.execute failed")?;
                     ors.push(r);
                 };
                 self.visited.insert(q_id,true);
@@ -77,7 +78,7 @@ impl<'a> Querier<'a> {
     }
 
     fn execute_outcome(&self, oid: &OutcomeId) -> Result<OutcomeResult> {
-        let outcome = self.ql.get_outcome(oid).ok_or("can't find outcome")?;
+        let outcome = self.ql.get_outcome(oid).context("can't find outcome")?;
         let out = outcome.execute()?;
         Ok(OutcomeResult{
             outcome: oid.clone(),
@@ -97,7 +98,7 @@ impl<'a> Querier<'a> {
         // add answers to engine, making a new map to keep track of ids
         let mut ans_map = HashMap::new();
         for (i,a) in query.answers().iter().enumerate() {
-            let ans = self.ql.get_answer(a).ok_or("can't find answer")?;
+            let ans = self.ql.get_answer(a).context("can't find answer")?;
             q.add_answer(i+1, ans.display());
             ans_map.insert((i+1).to_string(),a);
         };
@@ -115,7 +116,7 @@ impl<'a> Querier<'a> {
     fn get_query_text(&'a self, query: &'a Query) -> Result<String> {
         match &query.get_seed() {
             QuerySeed::FromOutcome(o) => {
-                let outcome = &self.ql.get_outcome(o).ok_or("can't find outcome")?;
+                let outcome = &self.ql.get_outcome(o).context("can't find outcome")?;
                 outcome.execute()
             },
             QuerySeed::Text(t) => {

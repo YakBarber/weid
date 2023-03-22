@@ -5,8 +5,7 @@ use reqwest;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
-
-use crate::util::Result;
+use anyhow::Result;
 
 pub type PinboardUrl = String;
 

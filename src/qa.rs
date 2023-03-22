@@ -8,8 +8,8 @@ use std::collections::VecDeque;
 use std::marker::PhantomData;
 
 use nanoid::nanoid;
+use anyhow::Result;
 
-use super::util::Result;
 use super::outcome::*;
 
 pub type AnswerId = String;

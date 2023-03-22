@@ -5,8 +5,7 @@ use std::rc::Rc;
 use std::fmt;
 
 use nanoid::nanoid;
-
-use super::util::Result;
+use anyhow::Result;
 
 pub type OutcomeId = String;
 

@@ -13,8 +13,8 @@ use std::io::{stdout, stderr, Write};
 
 use termimad::MadSkin;
 use termimad as t;
+use anyhow::Result;
 
-use weid::util::Result;
 use weid::pbin;
 use weid::outcome::*;
 use weid::qa::*;
