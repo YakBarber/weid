@@ -1,0 +1,4 @@
+- Replace custom `Result` and generic `Error`s with `thiserror` and `anyhow` implementation
+- convert do_next_query/Querier into a state machine
+- make `Answer` and `Outcome` generalizable, so they don't have to be repeated for each `Query`
+- replace `Result<Option<..>>` stuff with a custom result type
