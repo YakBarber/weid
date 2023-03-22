@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_variables)]
 
 use std::collections::hash_map::HashMap;
+use std::fmt::Debug;
 
 use termimad::MadSkin;
 use termimad as t;
@@ -11,6 +12,7 @@ use super::util::Result;
 
 use super::outcome::OutcomeId;
 
+#[derive(Debug)]
 pub struct OutcomeResult {
     outcome: OutcomeId,
     output: String,
@@ -38,13 +40,17 @@ impl<'a> Querier<'a> {
         }
     }
 
-    // TODO: this is gross
-    fn pick_new_query(&self) -> Option<QueryId> {
-        Some(self.ql.get_query_ids().get(0)?.to_owned())
+    fn get_next_unvisited_query_id(&self) -> Option<QueryId> {
+        for (qid, visited) in self.visited.iter() {
+            if !visited {
+                return Some(qid.clone());
+            };
+        };
+        None
     }
 
     fn get_next_query(&self) -> Option<Query> {
-        let qid = self.next.clone().or(self.pick_new_query())?;
+        let qid = self.next.clone().or(self.get_next_unvisited_query_id())?;
         self.ql.get_query(&qid).cloned()
     }
 
@@ -53,6 +59,7 @@ impl<'a> Querier<'a> {
         let next = &self.get_next_query();
         match next {
             Some(n) => {
+                let q_id = n.id().clone();
                 let ans_id = self.execute_query(n)?;
 
                 let ans = self.ql.get_answer(&ans_id).ok_or("can't find answer")?;
@@ -62,6 +69,7 @@ impl<'a> Querier<'a> {
                     let r = self.execute_outcome(o_id)?;
                     ors.push(r);
                 };
+                self.visited.insert(q_id,true);
                 Ok(Some(ors))
             },
             None => Ok(None)
@@ -91,7 +99,7 @@ impl<'a> Querier<'a> {
         for (i,a) in query.answers().iter().enumerate() {
             let ans = self.ql.get_answer(a).ok_or("can't find answer")?;
             q.add_answer(i+1, ans.display());
-            ans_map.insert(i.to_string(),a);
+            ans_map.insert((i+1).to_string(),a);
         };
        
         //actually prompt the user with the question, get resulting "key"
