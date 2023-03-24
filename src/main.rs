@@ -26,27 +26,51 @@ use weid::qa::*;
 use weid::querylist::*;
 use weid::querier::*;
 
-fn prepare_question_text(post: &pbin::PinboardPost) -> String {
+fn prepare_question_text(
+    post: &pbin::PinboardPost, 
+    pbtags: &pbin::PinboardSuggested,
+) -> String {
+    //tags already on the post
     let mut tags = "".to_string();
-    if !post.tag.is_empty() {
-        tags = format!("**{}**", post.tag.join("**, **"));
+    if !post.tags.split(" ").collect::<Vec<&str>>().is_empty() {
+        tags = format!("**{}**", post.tags);
     }
+
+    //"suggested" tags are the popular tags for this post
+    let mut stags = "".to_string();
+    if let Some(sugged) = pbtags[0].get("suggested") {
+        if !sugged.is_empty() {
+            stags = format!("**{}**", sugged.join("**, **"));
+        };
+    };
+
+    //"recommended" tags are recommended from the user's own tag list
+    let mut rtags = "".to_string();
+    if let Some(recced) = pbtags[0].get("recommended") {
+        if !recced.is_empty() {
+            rtags = format!("**{}**", recced.join("**, **"));
+        };
+    };
+
+    // output the markdown
     format!(
         "**{0}**\n\
         \n\
         {1}\n\
         \n\
-        *{2}*\n\
-        Tags: {3}
+        *{2}*\n\n\
+        Tags: {3}\n\
+        Suggested tags: {4}\n\
+        Recommended tags: {5}\n\
         ",
-        post.description, post.extended, post.href, tags
+        post.description, post.extended, post.href, tags, stags, rtags
     )
 }
 
 fn edit_in_editor(start_text: &String) -> Result<String> {
     let editor = env::var("EDITOR").context("no EDITOR defined")?;
     let tmpdir = tempdir()?;
-    let tmp_path = tmpdir.path().join(nanoid!());
+    let tmp_path = tmpdir.path().join(format!("{}.{}",nanoid!(),"sh"));
     let mut tmp = File::create(&tmp_path)?;
 
     writeln!(tmp, "{}", start_text)?;
