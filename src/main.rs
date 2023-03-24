@@ -147,13 +147,15 @@ fn output_query_results(anss: Vec<String>) {
 fn do_weid(ql: &mut QueryList) -> Result<()> {
     let mut querier = Querier::new(ql.clone());
     loop {
-        match &querier.do_next_query() {
+        let next = &querier.do_next_query();
+        match &next {
             Ok(Some(result)) => {
                 println!("{:?}", result);
                 continue; 
             },
             Err(e) => {
                 println!("oh no {}", e);
+                next.as_ref().unwrap();
                 break;
             },
             Ok(None) => {
