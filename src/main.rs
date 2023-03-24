@@ -105,7 +105,7 @@ fn create_pinboard_query<'a>(
     let mut a2 = Answer::from_text("update tags");
     let post2 = post.clone();
     let client2 = client.clone();
-    let o2 = Outcome::new(move || {
+    let o2 = Outcome::new(move |q, a| {
         let mut p = post2.clone();
         let tags = &post2.tags;
         let new = edit_in_editor(tags)?;
@@ -121,7 +121,7 @@ fn create_pinboard_query<'a>(
     let mut a3 = Answer::from_text("edit extended description");
     let post3 = post.clone();
     let client3 = client.clone();
-    let o3 = Outcome::new(move || {
+    let o3 = Outcome::new(move |q, a| {
         let mut p = post3.clone();
         let new = edit_in_editor(&p.extended)?;
         p.extended = new.clone();
@@ -136,7 +136,7 @@ fn create_pinboard_query<'a>(
     let mut a4 = Answer::from_text("mark read");
     let post4 = post.clone();
     let client4 = client.clone();
-    let o4 = Outcome::new(move || pbin::set_read(client4.clone(), post4.clone(), true));
+    let o4 = Outcome::new(move |q, a| pbin::set_read(client4.clone(), post4.clone(), true));
     a4.add_outcome(o4.id());
     ql.insert_outcome(o4);
     let a4id = ql.insert_answer(a4).unwrap();
@@ -145,7 +145,7 @@ fn create_pinboard_query<'a>(
     let mut a5 = Answer::from_text("mark unread");
     let post5 = post.clone();
     let client5 = client.clone();
-    let o5 = Outcome::new(move || pbin::set_unread(client5.clone(), post5.clone(), true));
+    let o5 = Outcome::new(move |q, a| pbin::set_unread(client5.clone(), post5.clone(), true));
     a5.add_outcome(o5.id());
     ql.insert_outcome(o5);
     let a5id = ql.insert_answer(a5).unwrap();
@@ -153,7 +153,7 @@ fn create_pinboard_query<'a>(
 
     let mut a6 = Answer::from_text("view in browser");
     let post6 = post.clone();
-    let o6 = Outcome::new(move || {
+    let o6 = Outcome::new(move |q, a| {
         open::that(&post6.href)?;
         Ok("".to_string())
     });

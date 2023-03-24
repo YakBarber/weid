@@ -60,18 +60,18 @@ impl<'a> Querier<'a> {
         let next = &self.get_next_query();
         match next {
             Some(n) => {
-                let q_id = n.id().clone();
+                let q_id = n.id();
                 let ans_id = self.execute_query(n)?;
 
                 let ans = self.ql.get_answer(&ans_id).context("can't find answer")?;
-                let a_id = ans.id().clone();
+                let a_id = ans.id();
                 let mut ors = Vec::new();
 
                 for o_id in ans.outcomes() {
-                    let r = self.execute_outcome(o_id, q_id, a_id).context("outcome.execute failed")?;
+                    let r = self.execute_outcome(o_id, q_id.clone(), a_id.clone()).context("outcome.execute failed")?;
                     ors.push(r);
                 };
-                self.visited.insert(q_id,true);
+                self.visited.insert(q_id.clone(),true);
                 Ok(Some(ors))
             },
             None => Ok(None)
