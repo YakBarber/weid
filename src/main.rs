@@ -18,6 +18,7 @@ use termimad as t;
 use nanoid::nanoid;
 use anyhow::{Context, Result};
 use tempfile::tempdir;
+use open;
 
 use weid::pbin;
 use weid::outcome::*;
@@ -112,6 +113,16 @@ fn create_pinboard_queries<'a>(posts: &'a Vec<pbin::PinboardPost>, client: &'a p
         ql.insert_outcome(o5);
         let a5id = ql.insert_answer(a5).unwrap();
         ql.link_answer_to_query(&a5id, &qid);
+
+        let mut a6 = Answer::from_text("view in browser");
+        let o6 = Outcome::new(|| {
+            open::that(&post.href)?;
+            Ok("".to_string())
+        });
+        a6.add_outcome(o6.id());
+        ql.insert_outcome(o6);
+        let a6id = ql.insert_answer(a6).unwrap();
+        ql.link_answer_to_query(&a6id, &qid);
     };
 
     ql
