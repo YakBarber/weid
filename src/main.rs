@@ -52,6 +52,8 @@ fn prepare_question_text(
         };
     };
 
+    println!("{:?}", post);
+
     // output the markdown
     format!(
         "**{0}**\n\
@@ -83,71 +85,82 @@ fn edit_in_editor(start_text: &String) -> Result<String> {
     Ok(change)
 }
 
-fn create_pinboard_queries<'a>(posts: &'a Vec<pbin::PinboardPost>, client: &'a pbin::PinboardClient) -> QueryList<'a> {
+// this is gross
+fn create_pinboard_query<'a>(
+    post: pbin::PinboardPost,
+    pbtags: pbin::PinboardSuggested, 
+    client: pbin::PinboardClient,
+) -> QueryList<'a> {
 
     let mut ql = QueryList::new();
 
-    for (i,post) in posts.iter().enumerate() {
+    let query = Query::from_text(&prepare_question_text(&post, &pbtags));
+    let qid = ql.insert_query(query).unwrap();
 
-        let query = Query::from_text(&prepare_question_text(post));
-        let qid = ql.insert_query(query).unwrap();
-
-        let a1 = Answer::from_text("skip");
-        let a1id = ql.insert_answer(a1).unwrap();
-        ql.link_answer_to_query(&a1id, &qid);
+    let a1 = Answer::from_text("skip");
+    let a1id = ql.insert_answer(a1).unwrap();
+    ql.link_answer_to_query(&a1id, &qid);
 
 
-        let mut a2 = Answer::from_text("add_tags");
-        let o2 = Outcome::new(|| {
-            let mut p = post.clone();
-            let tags = &p.tag.join(" ");
-            let new = edit_in_editor(tags)?;
-            p.tag = new.split(" ").map(|s| s.to_string()).collect();
-            client.clone().update_post(p)?;
-            Ok(new)
-        });
-        a2.add_outcome(o2.id());
-        ql.insert_outcome(o2);
-        let a2id = ql.insert_answer(a2).unwrap();
-        ql.link_answer_to_query(&a2id, &qid);
+    let mut a2 = Answer::from_text("update tags");
+    let post2 = post.clone();
+    let client2 = client.clone();
+    let o2 = Outcome::new(move || {
+        let mut p = post2.clone();
+        let tags = &post2.tags;
+        let new = edit_in_editor(tags)?;
+        p.tags = new.to_string();
+        client2.clone().update_post(p, true)?;
+        Ok(new)
+    });
+    a2.add_outcome(o2.id());
+    ql.insert_outcome(o2);
+    let a2id = ql.insert_answer(a2).unwrap();
+    ql.link_answer_to_query(&a2id, &qid);
 
-        let mut a3 = Answer::from_text("edit extended description");
-        let o3 = Outcome::new(|| {
-            let mut p = post.clone();
-            let new = edit_in_editor(&p.extended)?;
-            p.extended = new.clone();
-            client.clone().update_post(p)?;
-            Ok(new)
-        });
-        a3.add_outcome(o3.id());
-        ql.insert_outcome(o3);
-        let a3id = ql.insert_answer(a3).unwrap();
-        ql.link_answer_to_query(&a3id, &qid);
+    let mut a3 = Answer::from_text("edit extended description");
+    let post3 = post.clone();
+    let client3 = client.clone();
+    let o3 = Outcome::new(move || {
+        let mut p = post3.clone();
+        let new = edit_in_editor(&p.extended)?;
+        p.extended = new.clone();
+        client3.clone().update_post(p, true)?;
+        Ok(new)
+    });
+    a3.add_outcome(o3.id());
+    ql.insert_outcome(o3);
+    let a3id = ql.insert_answer(a3).unwrap();
+    ql.link_answer_to_query(&a3id, &qid);
 
-        let mut a4 = Answer::from_text("mark read");
-        let o4 = Outcome::new(|| pbin::set_read(client.clone(), post.clone()));
-        a4.add_outcome(o4.id());
-        ql.insert_outcome(o4);
-        let a4id = ql.insert_answer(a4).unwrap();
-        ql.link_answer_to_query(&a4id, &qid);
+    let mut a4 = Answer::from_text("mark read");
+    let post4 = post.clone();
+    let client4 = client.clone();
+    let o4 = Outcome::new(move || pbin::set_read(client4.clone(), post4.clone(), true));
+    a4.add_outcome(o4.id());
+    ql.insert_outcome(o4);
+    let a4id = ql.insert_answer(a4).unwrap();
+    ql.link_answer_to_query(&a4id, &qid);
 
-        let mut a5 = Answer::from_text("mark unread");
-        let o5 = Outcome::new(|| pbin::set_unread(client.clone(), post.clone()));
-        a5.add_outcome(o5.id());
-        ql.insert_outcome(o5);
-        let a5id = ql.insert_answer(a5).unwrap();
-        ql.link_answer_to_query(&a5id, &qid);
+    let mut a5 = Answer::from_text("mark unread");
+    let post5 = post.clone();
+    let client5 = client.clone();
+    let o5 = Outcome::new(move || pbin::set_unread(client5.clone(), post5.clone(), true));
+    a5.add_outcome(o5.id());
+    ql.insert_outcome(o5);
+    let a5id = ql.insert_answer(a5).unwrap();
+    ql.link_answer_to_query(&a5id, &qid);
 
-        let mut a6 = Answer::from_text("view in browser");
-        let o6 = Outcome::new(|| {
-            open::that(&post.href)?;
-            Ok("".to_string())
-        });
-        a6.add_outcome(o6.id());
-        ql.insert_outcome(o6);
-        let a6id = ql.insert_answer(a6).unwrap();
-        ql.link_answer_to_query(&a6id, &qid);
-    };
+    let mut a6 = Answer::from_text("view in browser");
+    let post6 = post.clone();
+    let o6 = Outcome::new(move || {
+        open::that(&post6.href)?;
+        Ok("".to_string())
+    });
+    a6.add_outcome(o6.id());
+    ql.insert_outcome(o6);
+    let a6id = ql.insert_answer(a6).unwrap();
+    ql.link_answer_to_query(&a6id, &qid);
 
     ql
 }
@@ -195,11 +208,16 @@ fn do_weid(ql: &mut QueryList) -> Result<()> {
 
 fn main() {
     let auth: String = env::var("PINBOARD_API_TOKEN").unwrap();
-    let p = pbin::PinboardClient::new(auth);
+    let mut p = pbin::PinboardClient::new(auth);
 
-    let last = p.get_posts_recent(5).unwrap();
+    let last = p.get_posts_recent(5, true).unwrap();
 
-    let mut ql = create_pinboard_queries(&last.posts, &p);
+    let mut ql = QueryList::new();
+    for post in last.posts {
+        let pbtags = p.get_suggested_tags(&post.href, true).unwrap();
+        let this_ql = create_pinboard_query(post.clone(), pbtags.clone(), p.clone());
+        ql.extend(this_ql);
+    };
 
     let out = do_weid(&mut ql);
 
