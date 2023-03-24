@@ -167,7 +167,8 @@ fn create_pinboard_query<'a>(
 
 fn do_output(outs: Vec<&Answer>) -> Result<()> {
     for ans in outs.iter() {
-        let bytes = ans.display.as_bytes();
+        let disp = ans.display();
+        let bytes = disp.as_bytes();
         stdout().write_all(bytes)?
     };
     Ok(())

@@ -2,10 +2,7 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
-use std::error::Error;
 use std::fmt::Debug;
-
-use anyhow::Result;
 
 use super::outcome::{Outcome, OutcomeId};
 use super::qa::*;

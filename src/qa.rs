@@ -17,7 +17,7 @@ pub type QueryId = String;
 
 #[derive(Clone, Hash, PartialEq, Debug)]
 pub struct Answer {
-    pub display: String,
+    display: String,
     _id: AnswerId,
     next_query: Option<QueryId>,
     outcomes: Vec<OutcomeId>,
