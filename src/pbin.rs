@@ -1,11 +1,14 @@
 
 use std::vec::Vec;
 use std::fmt::Debug;
+use std::thread::sleep;
+use std::time::Duration;
 use reqwest;
+use reqwest::StatusCode;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
-use anyhow::Result;
+use anyhow::{Result, bail};
 
 pub type PinboardUrl = String;
 
@@ -55,6 +58,7 @@ pub type PinboardTagList = HashMap<String,u32>;
 pub struct PinboardClient {
     auth_token: String, // user:1234567890ABCDEABCDE
     format: String, // only "json" right now
+    wait_time: Duration, // counter for waiting between too-many-requests responses
 }
 
 #[allow(dead_code)]
@@ -63,6 +67,7 @@ impl PinboardClient {
         PinboardClient {
             auth_token: auth,
             format: "json".to_string(),
+            wait_time: Duration::from_secs(1),
         }
     }
 
@@ -78,10 +83,41 @@ impl PinboardClient {
         url
     }
 
-    fn api_get<T: DeserializeOwned>(&self, meth: &str, args: &Vec<(String, String)> ) -> Result<T> {
+    #[allow(unused_assignments)]
+    fn api_get<T: DeserializeOwned>(
+        &mut self, 
+        meth: &str, 
+        args: &Vec<(String, String)>,
+        progress: bool
+    ) -> Result<T> {
         let url = self.make_api_url(meth, args);
-        let r = reqwest::blocking::get(url)?.text()?;
-        Ok(serde_json::from_str(&r[..])?)
+        let mut retry = true;
+
+        while retry {
+            retry = false;
+
+            let r = reqwest::blocking::get(url)?;
+
+            match r.status() {
+                StatusCode::OK => {
+                    let t = r.text()?;
+                    self.wait_time = Duration::from_secs(1);
+                    return Ok(serde_json::from_str(&t[..])?);
+                },
+                StatusCode::TOO_MANY_REQUESTS => {
+                    sleep((&self.wait_time).clone());
+                    self.wait_time = self.wait_time + self.wait_time;
+                    retry = true;
+                },
+                status => {
+                    panic!(
+                        "Got an unexpected status code from pinboard.in: {}", 
+                        status
+                    );
+                },
+            };
+        };
+        bail!("unreachable")
     }
 
     pub fn get_posts_recent(&self, count: u32) -> Result<PinboardPosts> {
