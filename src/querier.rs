@@ -64,10 +64,11 @@ impl<'a> Querier<'a> {
                 let ans_id = self.execute_query(n)?;
 
                 let ans = self.ql.get_answer(&ans_id).context("can't find answer")?;
+                let a_id = ans.id().clone();
                 let mut ors = Vec::new();
 
                 for o_id in ans.outcomes() {
-                    let r = self.execute_outcome(o_id).context("outcome.execute failed")?;
+                    let r = self.execute_outcome(o_id, q_id, a_id).context("outcome.execute failed")?;
                     ors.push(r);
                 };
                 self.visited.insert(q_id,true);
@@ -77,9 +78,11 @@ impl<'a> Querier<'a> {
         }
     }
 
-    fn execute_outcome(&self, oid: &OutcomeId) -> Result<OutcomeResult> {
+    fn execute_outcome(&self, oid: &OutcomeId, qid: QueryId, aid: AnswerId) -> Result<OutcomeResult> {
         let outcome = self.ql.get_outcome(oid).context("can't find outcome")?;
-        let out = outcome.execute()?;
+        let query = self.ql.get_query(&qid).context("can't find query")?;
+        let answer = self.ql.get_answer(&aid).context("can't find answer")?;
+        let out = outcome.execute(query, answer)?;
         Ok(OutcomeResult{
             outcome: oid.clone(),
             output: out,

@@ -7,12 +7,14 @@ use std::fmt;
 use nanoid::nanoid;
 use anyhow::Result;
 
+use crate::qa::*;
+
 pub type OutcomeId = String;
 
 #[derive(Clone)]
 pub struct Outcome<'a> {
     _id: String,
-    closure: Rc<dyn Fn() -> Result<String> + 'a>,
+    closure: Rc<dyn Fn(&Query, &Answer) -> Result<String> + 'a>,
 }
 
 impl<'a> fmt::Debug for Outcome<'a> {
@@ -26,13 +28,13 @@ impl<'a> Outcome<'a> {
         &self._id
     }
 
-    pub fn execute(&self) -> Result<String> {
-        (&self.closure)()
+    pub fn execute(&self, query: &Query, answer: &Answer) -> Result<String> {
+        (&self.closure)(query, answer)
     }
 
     pub fn new<F>(cloj: F) -> Outcome<'a>
     where
-        F: Fn() -> Result<String> + 'a,
+        F: Fn(&Query, &Answer) -> Result<String> + 'a,
     {
         Outcome {
             _id: nanoid!(),
@@ -44,7 +46,7 @@ impl<'a> Outcome<'a> {
     pub fn new_cmd(cmd: &'a [&str]) -> Outcome<'a> {
         Outcome {
             _id: nanoid!(),
-            closure: Rc::new(|| run_external_cmd(cmd)),
+            closure: Rc::new(|q, a| run_external_cmd(cmd)),
         }
     }
 }

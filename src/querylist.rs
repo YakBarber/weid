@@ -233,8 +233,8 @@ mod test {
         assert!(QueryList::validate(&ql));
 
         // prep some new changes
-        let bad_o_1 = Outcome::new(|| todo!()); //the closures shouldn't run
-        let bad_o_2 = Outcome::new(|| todo!());
+        let bad_o_1 = Outcome::new(|_, _| todo!()); //the closures shouldn't run
+        let bad_o_2 = Outcome::new(|_, _| todo!());
 
         let bad_q_1 = Query::from_outcome(bad_o_1.id().to_owned());
         let mut bad_q_2 = Query::from_text("asdf");
