@@ -32,7 +32,7 @@ pub struct PinboardPost {
     pub others: String,
 
     #[serde(default)]
-    pub tag: Vec<String>,
+    pub tags: String,
 }
 
 #[derive(Debug,Deserialize)]
@@ -153,7 +153,7 @@ impl PinboardClient {
             ("url".to_string(), post.href), 
             ("description".to_string(), post.description), 
             ("extended".to_string(), post.extended), 
-            ("tags".to_string(), post.tag.join(" ")), 
+            ("tags".to_string(), post.tags), 
             ("dt".to_string(), post.time), 
             ("replace".to_string(), "yes".to_string()), 
             ("shared".to_string(), "no".to_string()), 
