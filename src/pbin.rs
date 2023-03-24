@@ -9,6 +9,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 use anyhow::{Result, bail};
+use spinoff::{Spinner, spinners, Color};
 
 pub type PinboardUrl = String;
 
@@ -93,6 +94,11 @@ impl PinboardClient {
         let url = self.make_api_url(meth, args);
         let mut retry = true;
 
+        let mut spinner: Spinner;
+        if progress {
+            spinner = Spinner::new(spinners::Dots, "Waiting for Pinboard...", Color::White);
+        };
+
         while retry {
             retry = false;
 
@@ -102,6 +108,9 @@ impl PinboardClient {
                 StatusCode::OK => {
                     let t = r.text()?;
                     self.wait_time = Duration::from_secs(1);
+                    if progress {
+                        spinner.clear();
+                    };
                     return Ok(serde_json::from_str(&t[..])?);
                 },
                 StatusCode::TOO_MANY_REQUESTS => {
@@ -120,26 +129,26 @@ impl PinboardClient {
         bail!("unreachable")
     }
 
-    pub fn get_posts_recent(&self, count: u32) -> Result<PinboardPosts> {
+    pub fn get_posts_recent(&mut self, count: u32, progress: bool) -> Result<PinboardPosts> {
         let args = vec!(("count".to_string(), count.to_string()));
-        self.api_get::<PinboardPosts>("posts/recent", &args)
+        self.api_get::<PinboardPosts>("posts/recent", &args, progress)
     }
 
-    pub fn get_suggested_tags(&self, url: &PinboardUrl) -> Result<PinboardSuggested> {
+    pub fn get_suggested_tags(&mut self, url: &PinboardUrl, progress: bool) -> Result<PinboardSuggested> {
         let args = vec!(("url".to_string(), url.clone()));
-        self.api_get::<PinboardSuggested>("posts/suggest", &args)
+        self.api_get::<PinboardSuggested>("posts/suggest", &args, progress)
     }
 
-    pub fn get_all_tags(&self) -> Result<PinboardTagList> {
-        self.api_get::<PinboardTagList>("tags/get", &Vec::new())
+    pub fn get_all_tags(&mut self, progress: bool) -> Result<PinboardTagList> {
+        self.api_get::<PinboardTagList>("tags/get", &Vec::new(), progress)
     }
 
     // this one has a once per 5 min rate limit!
-    pub fn get_all_posts(&self, args: Vec<(String,String)>) -> Result<Vec<PinboardPost>> {
-        self.api_get::<Vec<PinboardPost>>("posts/all", &args)
+    pub fn get_all_posts(&mut self, args: Vec<(String,String)>, progress: bool) -> Result<Vec<PinboardPost>> {
+        self.api_get::<Vec<PinboardPost>>("posts/all", &args, progress)
     }
 
-    pub fn update_post(&self, post: PinboardPost) -> Result<()> {
+    pub fn update_post(&mut self, post: PinboardPost, progress: bool) -> Result<()> {
         let args = vec![
             ("url".to_string(), post.href), 
             ("description".to_string(), post.description), 
@@ -150,22 +159,22 @@ impl PinboardClient {
             ("shared".to_string(), "no".to_string()), 
             ("toread".to_string(), post.toread), 
         ];
-        self.api_get::<PinboardResult>("posts/add", &args)?;
+        self.api_get::<PinboardResult>("posts/add", &args, progress)?;
         Ok(())
     }
 }
 
-pub fn set_unread(client: PinboardClient, post: PinboardPost) -> Result<String> {
+pub fn set_unread(mut client: PinboardClient, post: PinboardPost, progress: bool) -> Result<String> {
     let mut new = post.clone();
     new.toread = "yes".to_string();
-    client.update_post(new)?;
+    client.update_post(new, progress)?;
     Ok("".to_string())
 }
 
-pub fn set_read(client: PinboardClient, post: PinboardPost) -> Result<String> {
+pub fn set_read(mut client: PinboardClient, post: PinboardPost, progress: bool) -> Result<String> {
     let mut new = post.clone();
     new.toread = "no".to_string();
-    client.update_post(new)?;
+    client.update_post(new, progress)?;
     Ok("".to_string())
 }
 
