@@ -94,22 +94,23 @@ impl PinboardClient {
         let url = self.make_api_url(meth, args);
         let mut retry = true;
 
-        let mut spinner: Spinner;
+        let mut spinner: Option<Spinner> = None;
         if progress {
-            spinner = Spinner::new(spinners::Dots, "Waiting for Pinboard...", Color::White);
+            let s = Spinner::new(spinners::Dots, "Waiting for Pinboard...", Color::White);
+            spinner = Some(s);
         };
 
         while retry {
             retry = false;
 
-            let r = reqwest::blocking::get(url)?;
+            let r = reqwest::blocking::get(&url)?;
 
             match r.status() {
                 StatusCode::OK => {
                     let t = r.text()?;
                     self.wait_time = Duration::from_secs(1);
                     if progress {
-                        spinner.clear();
+                        spinner.unwrap().clear();
                     };
                     return Ok(serde_json::from_str(&t[..])?);
                 },
