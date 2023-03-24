@@ -172,11 +172,6 @@ impl<'a> QueryList<'a> {
                         return false
                     };
                 };
-                if let QuerySeed::FromOutcome(o) = query.get_seed() {
-                    if !self.outcomes.contains_key(&o[..]) {
-                        return false
-                    };
-                };
             },
         };
         true
@@ -192,11 +187,6 @@ impl<'a> QueryList<'a> {
         };
 
         for q in new_ql.queries.values(){
-            if let QuerySeed::FromOutcome(o) = &q.get_seed() {
-                if !new_ql.outcomes.contains_key(o) {
-                    return false
-                };
-            };
             let anss = &q.answers();
             for a in anss.iter() {
                 if !new_ql.answers.contains_key(a) {
@@ -233,33 +223,26 @@ mod test {
         assert!(QueryList::validate(&ql));
 
         // prep some new changes
-        let bad_o_1 = Outcome::new(|_, _| todo!()); //the closures shouldn't run
         let bad_o_2 = Outcome::new(|_, _| todo!());
 
-        let bad_q_1 = Query::from_outcome(bad_o_1.id().to_owned());
-        let mut bad_q_2 = Query::from_text("asdf");
+        let mut bad_q_1 = Query::from_text("asdf");
 
         let mut bad_a_1 = Answer::from_text("some answer");
 
-        bad_q_2.add_answer(&bad_a_1.id());
+        bad_q_1.add_answer(&bad_a_1.id());
         bad_a_1.add_outcome(&bad_o_2.id());
 
         // adding the queries should both fail as-is
         assert_eq!(None, ql.insert_query(bad_q_1.clone()));
-        assert_eq!(None, ql.insert_query(bad_q_2.clone()));
 
         // adding the answer should also fail as-is
         assert_eq!(None, ql.insert_answer(bad_a_1.clone()));
 
-        // add in the first outcome, and the query referencing it should be allowed
-        ql.insert_outcome(bad_o_1);
-        assert_eq!(Some(bad_q_1.id().clone()), ql.insert_query(bad_q_1));
-
-        // and it the whole thing should still be valid as well
+        // and the whole thing should still be valid as well
         assert!(QueryList::validate(&ql));
 
-        // if we backdoor the other query in, the whole thing should now be invalid
-        ql.queries.insert(bad_q_2.id().to_owned(), bad_q_2);
+        // if we backdoor the query in, the whole thing should now be invalid
+        ql.queries.insert(bad_q_1.id().to_owned(), bad_q_1);
         assert!(!QueryList::validate(&ql));
 
         // inserting the referenced answer should still fail because its outcome isn't present

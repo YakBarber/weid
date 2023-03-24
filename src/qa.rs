@@ -55,30 +55,16 @@ impl Answer {
 }
 
 #[derive(Clone, Debug)]
-pub enum QuerySeed {
-    Text(String),
-    FromOutcome(OutcomeId),
-}
-
-#[derive(Clone, Debug)]
 pub struct Query { 
     _id: QueryId,
-    seed: QuerySeed,
+    display: String,
     answers: Vec<AnswerId>,
 }
 
 impl Query {
     pub fn from_text(display: &str) -> Query {
         Query {
-            seed: QuerySeed::Text(display.to_owned()),
-            _id: nanoid!(),
-            answers: Vec::new(),
-        }
-    }
-
-    pub fn from_outcome(outcome: OutcomeId) -> Query {
-        Query {
-            seed: QuerySeed::FromOutcome(outcome),
+            display: display.to_owned(),
             _id: nanoid!(),
             answers: Vec::new(),
         }
@@ -96,8 +82,8 @@ impl Query {
         &self.answers
     }
 
-    pub fn get_seed(&self) -> &QuerySeed {
-        &self.seed
+    pub fn display(&self) -> &String {
+        &self.display
     }
 }
 

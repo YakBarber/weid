@@ -92,7 +92,7 @@ impl<'a> Querier<'a> {
 
     fn execute_query(&self, query: &Query) -> Result<AnswerId> {
 
-        let text = &self.get_query_text(query)?;
+        let text = query.display();
 
         // set up Termimad question engine
         let mut q = t::Question::new(text);
@@ -114,17 +114,5 @@ impl<'a> Querier<'a> {
         
         //return AnswerId
         Ok(out.to_string())
-    }
-
-    fn get_query_text(&'a self, query: &'a Query) -> Result<String> {
-        match &query.get_seed() {
-            QuerySeed::FromOutcome(o) => {
-                let outcome = &self.ql.get_outcome(o).context("can't find outcome")?;
-                outcome.execute()
-            },
-            QuerySeed::Text(t) => {
-                Ok(t.to_owned())
-            },
-        }
     }
 }
