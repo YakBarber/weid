@@ -52,7 +52,7 @@ fn prepare_question_text(
         };
     };
 
-    println!("{:?}", post);
+    //println!("{:?}", post);
 
     // output the markdown
     format!(
@@ -210,16 +210,22 @@ fn main() {
     let auth: String = env::var("PINBOARD_API_TOKEN").unwrap();
     let mut p = pbin::PinboardClient::new(auth);
 
-    let last = p.get_posts_recent(5, true).unwrap();
+    let dates_raw = p.get_post_dates(true).unwrap();
+    let mut dates = dates_raw.dates.keys().collect::<Vec<&String>>();
+    dates.sort();
+    dates.reverse();
+    for date in dates {
+        
+        let mut ql = QueryList::new();
+        let posts = p.get_posts_by_date(date.clone(), true).unwrap();
+        for post in posts.posts {
+            let pbtags = p.get_suggested_tags(&post.href, true).unwrap();
+            let this_ql = create_pinboard_query(post.clone(), pbtags.clone(), p.clone());
+            ql.extend(this_ql);
+        };
 
-    let mut ql = QueryList::new();
-    for post in last.posts {
-        let pbtags = p.get_suggested_tags(&post.href, true).unwrap();
-        let this_ql = create_pinboard_query(post.clone(), pbtags.clone(), p.clone());
-        ql.extend(this_ql);
+        let out = do_weid(&mut ql);
     };
-
-    let out = do_weid(&mut ql);
 
 }
 

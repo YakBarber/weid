@@ -55,6 +55,13 @@ pub struct PinboardTag {
 
 pub type PinboardTagList = HashMap<String,u32>;
 
+#[derive(Debug, Deserialize)]
+pub struct PinboardDates {
+    pub user: String,
+    pub tag: String,
+    pub dates: HashMap<String, usize>,
+}
+
 #[derive(Clone)]
 pub struct PinboardClient {
     auth_token: String, // user:1234567890ABCDEABCDE
@@ -112,6 +119,7 @@ impl PinboardClient {
                     if progress {
                         spinner.unwrap().clear();
                     };
+                    //println!("{:?}", t);
                     return Ok(serde_json::from_str(&t[..])?);
                 },
                 StatusCode::TOO_MANY_REQUESTS => {
@@ -147,6 +155,16 @@ impl PinboardClient {
     // this one has a once per 5 min rate limit!
     pub fn get_all_posts(&mut self, args: Vec<(String,String)>, progress: bool) -> Result<Vec<PinboardPost>> {
         self.api_get::<Vec<PinboardPost>>("posts/all", &args, progress)
+    }
+
+    pub fn get_post_dates(&mut self, progress: bool) -> Result<PinboardDates> {
+        self.api_get::<PinboardDates>("posts/dates", &Vec::new(), progress)
+    }
+
+    //not checking for proper date format...
+    pub fn get_posts_by_date(&mut self, date: String, progress: bool) -> Result<PinboardPosts> {
+        let args = vec!(("dt".to_string(), date.clone()));
+        self.api_get::<PinboardPosts>("posts/get", &args, progress)
     }
 
     pub fn update_post(&mut self, post: PinboardPost, progress: bool) -> Result<()> {
