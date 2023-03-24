@@ -9,11 +9,15 @@
 use std::env;
 use std::string::String;
 use std::collections::HashMap;
-use std::io::{stdout, stderr, Write};
+use std::io::{stdout, stderr, Write, Read};
+use std::process::Command;
+use std::fs::File;
 
 use termimad::MadSkin;
 use termimad as t;
-use anyhow::Result;
+use nanoid::nanoid;
+use anyhow::{Context, Result};
+use tempfile::tempdir;
 
 use weid::pbin;
 use weid::outcome::*;
@@ -38,6 +42,21 @@ fn prepare_question_text(post: &pbin::PinboardPost) -> String {
     )
 }
 
+fn edit_in_editor(start_text: &String) -> Result<String> {
+    let editor = env::var("EDITOR").context("no EDITOR defined")?;
+    let tmpdir = tempdir()?;
+    let tmp_path = tmpdir.path().join(nanoid!());
+    let mut tmp = File::create(&tmp_path)?;
+
+    writeln!(tmp, "{}", start_text)?;
+
+    Command::new(&editor).arg(&tmp_path).status().context("editor spawn failed")?;
+
+    let mut change = String::new();
+    File::open(tmp_path).context("file read failed")?.read_to_string(&mut change)?;
+
+    Ok(change)
+}
 
 fn create_pinboard_queries<'a>(posts: &'a Vec<pbin::PinboardPost>, client: &'a pbin::PinboardClient) -> QueryList<'a> {
 
@@ -56,7 +75,16 @@ fn create_pinboard_queries<'a>(posts: &'a Vec<pbin::PinboardPost>, client: &'a p
         let a2id = ql.insert_answer(a2).unwrap();
         ql.link_answer_to_query(&a2id, &qid);
 
-        let a3 = Answer::from_text("edit description");
+        let mut a3 = Answer::from_text("edit extended description");
+        let o3 = Outcome::new(|| {
+            let mut p = post.clone();
+            let new = edit_in_editor(&p.extended)?;
+            p.extended = new.clone();
+            client.clone().update_post(p)?;
+            Ok(new)
+        });
+        a3.add_outcome(o3.id());
+        ql.insert_outcome(o3);
         let a3id = ql.insert_answer(a3).unwrap();
         ql.link_answer_to_query(&a3id, &qid);
 
