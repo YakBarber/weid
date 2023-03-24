@@ -67,11 +67,22 @@ fn create_pinboard_queries<'a>(posts: &'a Vec<pbin::PinboardPost>, client: &'a p
         let query = Query::from_text(&prepare_question_text(post));
         let qid = ql.insert_query(query).unwrap();
 
-        let a1 = Answer::from_text("add_tags");
+        let a1 = Answer::from_text("skip");
         let a1id = ql.insert_answer(a1).unwrap();
         ql.link_answer_to_query(&a1id, &qid);
 
-        let a2 = Answer::from_text("skip");
+
+        let mut a2 = Answer::from_text("add_tags");
+        let o2 = Outcome::new(|| {
+            let mut p = post.clone();
+            let tags = &p.tag.join(" ");
+            let new = edit_in_editor(tags)?;
+            p.tag = new.split(" ").map(|s| s.to_string()).collect();
+            client.clone().update_post(p)?;
+            Ok(new)
+        });
+        a2.add_outcome(o2.id());
+        ql.insert_outcome(o2);
         let a2id = ql.insert_answer(a2).unwrap();
         ql.link_answer_to_query(&a2id, &qid);
 
