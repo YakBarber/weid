@@ -23,6 +23,7 @@ use weid::outcome::*;
 use weid::qa::*;
 use weid::querylist::*;
 use weid::querier::*;
+use weid::cli::test;
 
 fn edit_in_editor(start_text: &String) -> Result<String> {
     let editor = env::var("EDITOR").context("no EDITOR defined")?;
@@ -83,4 +84,5 @@ fn do_weid(ql: &mut QueryList) -> Result<()> {
 
 
 fn main() {
+    test();
 }
