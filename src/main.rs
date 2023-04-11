@@ -5,7 +5,6 @@
 #![allow(dead_code)]
 
 //use atty;
-//use clap::Parser;
 use std::env;
 use std::string::String;
 use std::collections::HashMap;

@@ -16,7 +16,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1.0.70"
 atty = "0.2.14"
-clap = { version = "4.0.32", features = ["derive"] }
+clap_lex = "0.4.1"
 nanoid = "0.4.0"
 open = "4.0.1"
 reqwest = { version = "0.11.13", features = ["json", "blocking"] }
