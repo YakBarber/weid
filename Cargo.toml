@@ -15,7 +15,6 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.70"
-atty = "0.2.14"
 clap_lex = "0.4.1"
 nanoid = "0.4.0"
 open = "4.0.1"
