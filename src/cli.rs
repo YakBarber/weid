@@ -4,7 +4,9 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 
-use clap_lex;
+use std::collections::hash_map::HashMap;
+
+use clap_lex::{ArgCursor, RawArgs};
 
 use crate::outcome::Outcome;
 
@@ -40,7 +42,46 @@ struct Cli {
 }
 
 
+pub fn get_and_preprocess_args() -> Option<Vec<(String, String)>> {
+    let raw = RawArgs::from_args();
+    
+    _get_and_preprocess_args(raw)
+}
 
+// TODO: this needs a refactor
+// TODO: should I be bothering with converting to String? (no)
+// TODO: this should return a meaningful Result<...>
+fn _get_and_preprocess_args(raw: RawArgs) -> Option<Vec<(String, String)>> {
+    let mut cur = raw.cursor();
+
+    let mut args = Vec::new();
+
+    while let Some(a) = raw.next(&mut cur) {
+        
+        //not supporting multi-flag shorts
+        if a.is_short() {
+            let flag = a.to_short()?.next()?.unwrap().to_string(); 
+            let val = raw.next(&mut cur)?.to_value().unwrap().to_string();
+            args.push((flag,val));
+        }
+
+        else if a.is_long() {
+            let (flag_raw, val_raw) = a.to_long()?;
+            let flag = flag_raw.unwrap().to_string();
+            match val_raw {
+                Some(val) => {
+                    args.push((flag, val.to_str()?.to_string()));
+                },
+                None => {
+                    let val = raw.next(&mut cur)?.to_value().unwrap().to_string();
+                    args.push((flag, val));
+                },
+            }
+        }
+    }
+
+    Some(args)
+}
 
 pub fn test() {
     //let args = vec![
@@ -50,36 +91,35 @@ pub fn test() {
     //    "-q", "question 2?", "-a", "yes", "-c", "ls"
     //];
 
-    let raw = clap_lex::RawArgs::from_args();
-    let mut cur = raw.cursor();
-    let _bin = raw.next_os(&mut cur);
-
     let mut active_q: Option<Query> = None;
     let mut active_a: Option<Answer> = None;
 
-    while let Some(a) = raw.next(&mut cur) {
-
-        if a.is_short() {
-
-        }
-        else if a.is_long() {
-        }
-        else {
-        };
-
-        println!("---\n{:?}", a);  
-        println!("is_short {:?}", a.is_short());  
-        println!("is_long {:?}", a.is_long());  
-        println!("to_long {:?}", a.to_long());  
-        println!("to_short {:?}", a.to_short());  
-        println!("to_value {:?}", a.to_value());  
-        println!("to_value_os {:?}", a.to_value_os());  
-
-    };
-
-
+    let args = get_and_preprocess_args().unwrap();
 }
 
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn preprocessing_args() {
+        let args = "-a a1 --query q1 --answer=a2 -o ls -q q2".split(" ");
+        let correct: Vec<(String, String)> = Vec::from([
+            ("a", "a1"),
+            ("query", "q1"),
+            ("answer", "a2"),
+            ("o", "ls"),
+            ("q", "q2"),
+        ]).iter().map(|(s,t)| (s.to_string(), t.to_string())).collect();
+
+
+        let raw = RawArgs::new(args);
+        let processed = _get_and_preprocess_args(raw).unwrap();
+
+        assert_eq!(processed, correct);
+    }
+}
 
 // focus on cli? :
 //
