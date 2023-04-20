@@ -37,10 +37,12 @@ The unit tests can be run via `cargo test`.
 `weid` can be called from the command line with the following options:
 
 - `-q TEXT`, `--query=TEXT`: Define a new query (a question you want `weid` to ask you). The text supplied to this argument can be in markdown format.
-- `-a TEXT`, `--answer=TEXT`: Define a new answer (an option you have when `weid` asks you a question)
-- `-o TEXT`, `--outcome=TEXT`: Define a new outcome (something that happens when you pick a given answer.
+- `-a TEXT`, `--answer=TEXT`: Define a new answer (an option you have when `weid` asks you a question).
+- `-o TEXT`, `--outcome=TEXT`: Define a new outcome (something that happens when you pick a given answer).
 
-These arguments are *position sensitive*. Examples are helpful.
+These arguments are *position sensitive*. Examples will probably be helpful.
+
+#### Examples
 
 This will create a single query with two possible answers:
 
