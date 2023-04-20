@@ -9,88 +9,56 @@ use anyhow::{Context, Result};
 
 use super::qa::*;
 use super::querylist::*;
+use super::outcome::*;
 
-
-use super::outcome::OutcomeId;
-
-#[derive(Debug)]
-pub struct OutcomeResult {
-    outcome: OutcomeId,
-    output: String,
-}
+type OutcomeResult = String;
 
 pub struct Querier<'a> {
     ql: QueryList<'a>,
-    visited: HashMap<QueryId, bool>,
     next: Option<QueryId>,
+    visited: Vec<QueryId>,
 
 }
 
 impl<'a> Querier<'a> {
     pub fn new(qlist: QueryList) -> Querier {
         Querier {
-            visited: {
-                let mut hm = HashMap::new();
-                for qid in &qlist.get_query_ids() {
-                    hm.insert(qid.to_owned(), false);
-                };
-                hm
-            },
             ql: qlist,
             next: None,
+            visited: Vec::new(),
         }
     }
 
-    fn get_next_unvisited_query_id(&self) -> Option<QueryId> {
-        for (qid, visited) in self.visited.iter() {
-            if !visited {
-                return Some(qid.clone());
+    pub fn pick_next_query(&self) -> Option<QueryId> {
+        for key in self.ql.peek_queries().keys() {
+            if !self.visited.contains(key) {
+                return Some(key.clone());
             };
         };
         None
     }
 
-    fn get_next_query(&self) -> Option<Query> {
-        let qid = self.next.clone().or(self.get_next_unvisited_query_id())?;
-        self.ql.get_query(&qid).cloned()
-    }
-
-    // TODO make a better return type with an enum/struct later
-    pub fn do_next_query(&mut self) -> Result<Option<Vec<OutcomeResult>>> {
-        let next = &self.get_next_query();
-        match next {
-            Some(n) => {
-                let q_id = n.id();
-                let ans_id = self.execute_query(n)?;
-
-                let ans = self.ql.get_answer(&ans_id).context("can't find answer")?;
-                let a_id = ans.id();
-                let mut ors = Vec::new();
-
-                for o_id in ans.outcomes() {
-                    let r = self.execute_outcome(o_id, q_id.clone(), a_id.clone()).context("outcome.execute failed")?;
-                    ors.push(r);
-                };
-                self.visited.insert(q_id.clone(),true);
-                Ok(Some(ors))
+    pub fn get_next_query(&self) -> Option<Query> {
+        match self.next {
+            None => {
+                let qid = self.pick_next_query()?;
+                self.get_query(qid)
             },
-            None => Ok(None)
+            Some(qid) => {
+                self.get_query(qid)
+            },
         }
     }
 
-    fn execute_outcome(&self, oid: &OutcomeId, qid: QueryId, aid: AnswerId) -> Result<OutcomeResult> {
-        let outcome = self.ql.get_outcome(oid).context("can't find outcome")?;
-        let query = self.ql.get_query(&qid).context("can't find query")?;
-        let answer = self.ql.get_answer(&aid).context("can't find answer")?;
-        let out = outcome.execute(query, answer)?;
-        Ok(OutcomeResult{
-            outcome: oid.clone(),
-            output: out,
-        })
-
+    pub fn get_query(&self, qid: QueryId) -> Option<Query> {
+        self.ql.get_query(qid)
     }
 
-    fn execute_query(&self, query: &Query) -> Result<AnswerId> {
+    pub fn mark_visited(&mut self, qid: QueryId) {
+        self.visited.push(qid)
+    }
+
+    pub fn execute_query(&self, query: &Query<'a>) -> Result<Answer<'a>> {
 
         let text = query.display();
 
@@ -99,20 +67,20 @@ impl<'a> Querier<'a> {
         let skin = MadSkin::default();
 
         // add answers to engine, making a new map to keep track of ids
-        let mut ans_map = HashMap::new();
-        for (i,a) in query.answers().iter().enumerate() {
-            let ans = self.ql.get_answer(a).context("can't find answer")?;
-            q.add_answer(i+1, ans.display());
-            ans_map.insert((i+1).to_string(),a);
+        let answers = query.answers();
+        for (i,a) in answers.iter().enumerate() {
+            q.add_answer(i+1, a.display());
         };
        
         //actually prompt the user with the question, get resulting "key"
-        let ans = q.ask(&skin)?;
-
-        // get the AnswerId associated with the key
-        let out = ans_map.get(&ans).unwrap();
+        let ans = q.ask(&skin)?.parse::<usize>()?;
         
-        //return AnswerId
-        Ok(out.to_string())
+        //return Answer
+        Ok(answers.get(ans-1).unwrap().to_owned())
     }
+    
+    pub fn execute_outcome(&mut self, outcome: Outcome<'a>) -> Result<String> {
+        outcome.execute()
+    }
+
 }
