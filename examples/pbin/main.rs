@@ -90,22 +90,17 @@ fn create_pinboard_query<'a>(
     post: pbin::PinboardPost,
     pbtags: pbin::PinboardSuggested, 
     client: pbin::PinboardClient,
-) -> QueryList<'a> {
+) -> Query<'a> {
 
-    let mut ql = QueryList::new();
+    let mut query = Query::from_text(prepare_question_text(&post, &pbtags));
 
-    let query = Query::from_text(&prepare_question_text(&post, &pbtags));
-    let qid = ql.insert_query(query).unwrap();
-
-    let a1 = Answer::from_text("skip");
-    let a1id = ql.insert_answer(a1).unwrap();
-    ql.link_answer_to_query(&a1id, &qid);
+    let a1 = Answer::from_text("skip".to_string());
 
 
-    let mut a2 = Answer::from_text("update tags");
+    let mut a2 = Answer::from_text("update tags".to_string());
     let post2 = post.clone();
     let client2 = client.clone();
-    let o2 = Outcome::new(move |q, a| {
+    let o2 = Outcome::new_closure(move || {
         let mut p = post2.clone();
         let tags = &post2.tags;
         let new = edit_in_editor(tags)?;
@@ -113,56 +108,46 @@ fn create_pinboard_query<'a>(
         client2.clone().update_post(p, true)?;
         Ok(new)
     });
-    a2.add_outcome(o2.id());
-    ql.insert_outcome(o2);
-    let a2id = ql.insert_answer(a2).unwrap();
-    ql.link_answer_to_query(&a2id, &qid);
+    a2.add_outcome(o2);
+    query.add_answer(a2);
 
-    let mut a3 = Answer::from_text("edit extended description");
+    let mut a3 = Answer::from_text("edit extended description".to_string());
     let post3 = post.clone();
     let client3 = client.clone();
-    let o3 = Outcome::new(move |q, a| {
+    let o3 = Outcome::new_closure(move || {
         let mut p = post3.clone();
         let new = edit_in_editor(&p.extended)?;
         p.extended = new.clone();
         client3.clone().update_post(p, true)?;
         Ok(new)
     });
-    a3.add_outcome(o3.id());
-    ql.insert_outcome(o3);
-    let a3id = ql.insert_answer(a3).unwrap();
-    ql.link_answer_to_query(&a3id, &qid);
+    a3.add_outcome(o3);
+    query.add_answer(a3);
 
-    let mut a4 = Answer::from_text("mark read");
+    let mut a4 = Answer::from_text("mark read".to_string());
     let post4 = post.clone();
     let client4 = client.clone();
-    let o4 = Outcome::new(move |q, a| pbin::set_read(client4.clone(), post4.clone(), true));
-    a4.add_outcome(o4.id());
-    ql.insert_outcome(o4);
-    let a4id = ql.insert_answer(a4).unwrap();
-    ql.link_answer_to_query(&a4id, &qid);
+    let o4 = Outcome::new_closure(move || pbin::set_read(client4.clone(), post4.clone(), true));
+    a4.add_outcome(o4);
+    query.add_answer(a4);
 
-    let mut a5 = Answer::from_text("mark unread");
+    let mut a5 = Answer::from_text("mark unread".to_string());
     let post5 = post.clone();
     let client5 = client.clone();
-    let o5 = Outcome::new(move |q, a| pbin::set_unread(client5.clone(), post5.clone(), true));
-    a5.add_outcome(o5.id());
-    ql.insert_outcome(o5);
-    let a5id = ql.insert_answer(a5).unwrap();
-    ql.link_answer_to_query(&a5id, &qid);
+    let o5 = Outcome::new_closure(move || pbin::set_unread(client5.clone(), post5.clone(), true));
+    a5.add_outcome(o5);
+    query.add_answer(a5);
 
-    let mut a6 = Answer::from_text("view in browser");
+    let mut a6 = Answer::from_text("view in browser".to_string());
     let post6 = post.clone();
-    let o6 = Outcome::new(move |q, a| {
+    let o6 = Outcome::new_closure(move || {
         open::that(&post6.href)?;
         Ok("".to_string())
     });
-    a6.add_outcome(o6.id());
-    ql.insert_outcome(o6);
-    let a6id = ql.insert_answer(a6).unwrap();
-    ql.link_answer_to_query(&a6id, &qid);
+    a6.add_outcome(o6);
+    query.add_answer(a6);
 
-    ql
+    query
 }
 
 fn do_output(outs: Vec<&Answer>) -> Result<()> {
@@ -184,22 +169,13 @@ fn output_query_results(anss: Vec<String>) {
 
 fn do_weid(ql: &mut QueryList) -> Result<()> {
     let mut querier = Querier::new(ql.clone());
-    loop {
-        let next = &querier.do_next_query();
-        match &next {
-            Ok(Some(result)) => {
-                println!("{:?}", result);
-                continue; 
-            },
-            Err(e) => {
-                println!("oh no {}", e);
-                next.as_ref().unwrap();
-                break;
-            },
-            Ok(None) => {
-                println!("done!");
-                break;
-            },
+
+    while let Some(qid) = querier.pick_next_query() {
+        querier.mark_visited(qid);
+        let query = querier.get_query(qid.clone()).unwrap();
+        let answer = querier.execute_query(&query)?;
+        for o in answer.outcomes() {
+            let result = o.execute()?;
         };
     };
 
@@ -221,8 +197,8 @@ fn main() {
         let posts = p.get_posts_by_date(date.clone(), true).unwrap();
         for post in posts.posts {
             let pbtags = p.get_suggested_tags(&post.href, true).unwrap();
-            let this_ql = create_pinboard_query(post.clone(), pbtags.clone(), p.clone());
-            ql.extend(this_ql);
+            let this_q = create_pinboard_query(post.clone(), pbtags.clone(), p.clone());
+            ql.insert_query(this_q);
         };
 
         let out = do_weid(&mut ql);
