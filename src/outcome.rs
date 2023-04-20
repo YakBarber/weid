@@ -6,7 +6,6 @@ use std::fmt;
 
 use anyhow::Result;
 
-use crate::qa::*;
 use crate::querylist::*;
 
 
@@ -26,7 +25,7 @@ impl<'a> fmt::Debug for Outcome<'a> {
 
 impl<'a> Outcome<'a> {
     pub fn new_cmd(cmd: String) -> Self {
-        todo!();
+        Outcome::Command(cmd)
     }
 
     pub fn new_closure<F>(fun: F) -> Self

@@ -2,6 +2,7 @@
 
 use std::collections::hash_map::HashMap;
 use std::fmt::Debug;
+use std::io::{stdout, Write};
 
 use termimad::MadSkin;
 use termimad as t;
@@ -80,7 +81,9 @@ impl<'a> Querier<'a> {
     }
     
     pub fn execute_outcome(&mut self, outcome: Outcome<'a>) -> Result<String> {
-        outcome.execute()
+        let out = outcome.execute()?;
+        stdout().write_all(out.as_bytes())?;
+        Ok(out)
     }
 
 }

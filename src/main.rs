@@ -67,7 +67,8 @@ fn do_weid() -> Result<()> {
         let query = querier.get_query(qid.clone()).unwrap();
         let answer = querier.execute_query(&query)?;
         for o in answer.outcomes() {
-            let result = o.execute()?;
+            let out = o.execute()?;
+            stdout().write_all(out.as_bytes())?;
         };
     };
 
