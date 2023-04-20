@@ -13,6 +13,8 @@ The options presented for each link are:
 - add/remove tags
 - mark/unmark the link as "to read"
 
+Editing the title, description, and tags are performed via your `$EDITOR`, which needs to be defined for them to work properly.
+
 
 ## Usage
 
@@ -24,4 +26,4 @@ Once you have it, store it in an env variable named `PINBOARD_API_TOKEN`. You ca
 
 ## Caveats
 
-While this *works on my machine*(TM), there are likely bugs and edge cases that have not been addressed. I make no guarantee of this code's fitness for any purpose. I'm also not affiliated with Pinboard or its creator; I am merely a user of the site.
+While this *Works On My Machine*<sup>TM</sup>, there are likely bugs and edge cases that have not been addressed. I make no guarantee of this code's fitness for any purpose. I'm also not affiliated with Pinboard or its creator; I am merely a user of the site.
