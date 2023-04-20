@@ -6,84 +6,86 @@ use std::fmt::Debug;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
+use std::iter::IntoIterator;
 
 use nanoid::nanoid;
 use anyhow::Result;
 
 use super::outcome::*;
 
-pub type AnswerId = String;
-pub type QueryId = String;
-
-#[derive(Clone, Hash, PartialEq, Debug)]
-pub struct Answer {
+#[derive(Clone, Debug)]
+pub struct Answer<'a> {
     display: String,
-    _id: AnswerId,
-    next_query: Option<QueryId>,
-    outcomes: Vec<OutcomeId>,
+    outcomes: Vec<Outcome<'a>>,
 }
 
-impl Answer {
-    pub fn from_text(display: &str) -> Answer {
+impl<'a> Answer<'a> {
+    pub fn from_text(display: String) -> Answer<'a> {
         Answer {
-            display: display.to_owned(),
-            _id: nanoid!(),
-            next_query: None,
+            display,
             outcomes: Vec::new(),
         }
-    }
-
-    pub fn id(&self) -> &AnswerId {
-        &self._id
-    }
-
-    pub fn outcomes(&self) -> &Vec<OutcomeId> {
-        &self.outcomes
     }
 
     pub fn display(&self) -> String {
         self.display.clone()
     }
 
-    pub fn set_next_query(&mut self, qid: &QueryId) {
-        self.next_query = Some(qid.clone());
+    pub fn add_outcome(&mut self, outcome: Outcome<'a>) {
+        self.outcomes.push(outcome);
     }
 
-    pub fn add_outcome(&mut self, oid: &OutcomeId) {
-        self.outcomes.push(oid.clone());
+    pub fn outcomes(&self) -> Vec<Outcome<'a>> {
+        self.outcomes.clone()
     }
 }
+
+impl<'a> PartialEq for Answer<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.display == other.display
+    }
+}
+
 
 #[derive(Clone, Debug)]
-pub struct Query { 
-    _id: QueryId,
+pub struct Query<'a> { 
     display: String,
-    answers: Vec<AnswerId>,
+    answers: Vec<Answer<'a>>,
 }
 
-impl Query {
-    pub fn from_text(display: &str) -> Query {
+impl<'a> Query<'a> {
+    pub fn from_text(display: String) -> Query<'a> {
         Query {
-            display: display.to_owned(),
-            _id: nanoid!(),
+            display,
             answers: Vec::new(),
         }
     }
 
-    pub fn id(&self) -> &QueryId {
-        &self._id
-    }
-
-    pub fn add_answer(&mut self, ans: &AnswerId) {
-        self.answers.push(ans.clone());
-    }
-
-    pub fn answers(&self) -> &Vec<AnswerId> {
-        &self.answers
-    }
-
     pub fn display(&self) -> &String {
         &self.display
+    }
+
+    pub fn add_answer(&mut self, answer: Answer<'a>) {
+        self.answers.push(answer);
+    }
+
+    pub fn add_answers<I>(&mut self, iter: I) 
+    where
+        I: IntoIterator<Item = Answer<'a>>,
+    {
+        for i in iter.into_iter() {
+            self.add_answer(i);
+        };
+    }
+
+    pub fn answers(&self) -> Vec<Answer<'a>> {
+        self.answers.clone()
+    }
+}
+
+impl<'a> PartialEq for Query<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.display == other.display
     }
 }
 

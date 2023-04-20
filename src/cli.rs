@@ -3,34 +3,18 @@
 #![allow(dead_code)]
 #![allow(unused_mut)]
 #![allow(unused_variables)]
+#![allow(unused_imports)]
 
 use std::collections::hash_map::HashMap;
+use std::cmp::PartialEq;
 
 use clap_lex::{ArgCursor, RawArgs};
+use anyhow::{Result, bail};
+use log::debug;
 
+use crate::qa::*;
+use crate::querylist::*;
 use crate::outcome::Outcome;
-
-struct Query {
-    display: String,
-}
-impl Query {
-    pub fn from_text(display: &str) -> Query {
-        Query {
-            display: display.to_string(),
-        }
-    }
-}
-
-struct Answer {
-    display: String,
-}
-impl Answer {
-    pub fn from_text(display: &str) -> Answer {
-        Answer {
-            display: display.to_string(),
-        }
-    }
-}
 
 #[derive(Clone,Debug)]
 struct Cli {
