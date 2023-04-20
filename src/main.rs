@@ -19,11 +19,10 @@ use anyhow::{Context, Result};
 use tempfile::tempdir;
 use open;
 
-use weid::outcome::*;
 use weid::qa::*;
 use weid::querylist::*;
 use weid::querier::*;
-use weid::cli::test;
+use weid::cli;
 
 fn edit_in_editor(start_text: &String) -> Result<String> {
     let editor = env::var("EDITOR").context("no EDITOR defined")?;
@@ -58,24 +57,17 @@ fn output_query_results(anss: Vec<String>) {
     };
 }
 
-fn do_weid(ql: &mut QueryList) -> Result<()> {
-    let mut querier = Querier::new(ql.clone());
-    loop {
-        let next = &querier.do_next_query();
-        match &next {
-            Ok(Some(result)) => {
-                println!("{:?}", result);
-                continue; 
-            },
-            Err(e) => {
-                println!("oh no {}", e);
-                next.as_ref().unwrap();
-                break;
-            },
-            Ok(None) => {
-                println!("done!");
-                break;
-            },
+fn do_weid() -> Result<()> {
+    let ql = cli::get_arg_queries().unwrap();
+
+    let mut querier = Querier::new(ql);
+
+    while let Some(qid) = querier.pick_next_query() {
+        querier.mark_visited(qid);
+        let query = querier.get_query(qid.clone()).unwrap();
+        let answer = querier.execute_query(&query)?;
+        for o in answer.outcomes() {
+            let result = o.execute()?;
         };
     };
 
@@ -84,5 +76,6 @@ fn do_weid(ql: &mut QueryList) -> Result<()> {
 
 
 fn main() {
-    test();
+    env_logger::init();
+    do_weid().unwrap();
 }
