@@ -1,200 +1,85 @@
 
 #![allow(dead_code)]
+#![allow(unused_imports)]
 
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::fmt;
+use std::cmp::PartialEq;
 
-use super::outcome::{Outcome, OutcomeId};
+use anyhow::Result;
+use rand::seq::IteratorRandom;
+
+use super::outcome::Outcome;
 use super::qa::*;
 
-#[derive(Debug)]
-enum QLChange<'a> {
-    Query(Query),
-    Answer(Answer),
-    Outcome(Outcome<'a>),
+pub type QueryId = usize;
+
+#[derive(PartialEq, Clone, Eq, Hash)]
+pub struct AnswerId {
+    qid: usize,
+    sub: usize,
 }
 
-#[derive(Clone, Debug)]
-pub struct QueryList<'a> {
-    queries: HashMap<QueryId, Query>,
-    answers: HashMap<AnswerId, Answer>,
-    outcomes: HashMap<OutcomeId, Outcome<'a>>,
+impl fmt::Debug for AnswerId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "q{}a{}", self.qid, self.sub)
+    }
 }
+
+#[derive(Debug, Clone)]
+pub struct QueryList<'a> {
+    queries: HashMap<QueryId, Query<'a>>,
+    paths: HashMap<AnswerId,QueryId>,
+    next_id: usize,
+}
+
 
 impl<'a> QueryList<'a> {
-    pub fn new() -> QueryList<'a> {
+    pub fn new() -> Self {
         QueryList {
             queries: HashMap::new(),
-            answers: HashMap::new(),
-            outcomes: HashMap::new(),
+            paths: HashMap::new(),
+            next_id: 0,
         }
     }
 
-    //TODO: Add reference checks
-    pub fn new_from_vecs(queries: Vec<Query>, answers: Vec<Answer>, outcomes: Vec<Outcome<'a>>) -> QueryList<'a> {
-        QueryList {
-            queries: {
-                let mut new = HashMap::new();
-                for q in queries {
-                    new.insert(q.id().clone(), q);
-                };
-                new
-            },
-            answers: {
-                let mut new = HashMap::new();
-                for a in answers {
-                    new.insert(a.id().clone(), a);
-                };
-                new
-            },
-            outcomes: {
-                let mut new = HashMap::new();
-                for o in outcomes {
-                    new.insert(o.id().clone(), o);
-                };
-                new
-            },
+    pub fn add_path(&mut self, aid: AnswerId, target: QueryId) {
+        self.paths.insert(aid, target);
+    }
+
+    pub fn get_path(&self, aid: AnswerId) -> Option<QueryId> {
+        self.paths.get(&aid).map(|qid| qid.clone())
+    }
+
+    pub fn get_random_query(&self) -> Option<Query<'a>> {
+        let mut r = rand::thread_rng();
+        match self.queries.keys().choose(&mut r) {
+            None => None,
+            Some(qid) => self.get_query(*qid),
         }
     }
 
-    pub fn insert_query(&mut self, query: Query) -> Option<QueryId> {
-        let change = QLChange::Query(query);
-        self.make_change(change)
+    pub fn get_query(&self, qid: QueryId) -> Option<Query<'a>> {
+        self.queries.get(&qid).map(|q| q.clone())
     }
 
-    pub fn insert_answer(&mut self, answer: Answer) -> Option<AnswerId> {
-        let change = QLChange::Answer(answer);
-        self.make_change(change)
-    }
-
-    pub fn insert_outcome(&mut self, outcome: Outcome<'a>) -> Option<OutcomeId> {
-        let change = QLChange::Outcome(outcome);
-        self.make_change(change)
-    }
-
-    pub fn link_answer_to_query(&mut self, aid: &AnswerId, qid: &QueryId) -> Option<QueryId> {
-        let mut new_query = self.get_query(qid)?.clone();
-        new_query.add_answer(aid);
-        self.insert_query(new_query)
-    }
-
-    pub fn link_outcome_to_answer(&mut self, oid: &OutcomeId, aid: &AnswerId) -> Option<AnswerId> {
-        let mut new_answer = self.get_answer(aid)?.clone();
-        new_answer.add_outcome(oid);
-        self.insert_answer(new_answer)
-    }
- 
-    pub fn get_query(&self, qid: &QueryId) -> Option<&Query> {
-        self.queries.get(qid)
-    }
-
-    pub fn get_answer(&self, aid: &AnswerId) -> Option<&Answer> {
-        self.answers.get(aid)
-    }
-
-    pub fn get_outcome(&self, oid: &OutcomeId) -> Option<&Outcome> {
-        self.outcomes.get(oid)
-    }
-
-    pub fn get_query_ids(&self) -> Vec<QueryId> {
-        self.queries.keys().map(|k| k.to_owned()).collect()
-    }
-
-    fn make_change(&mut self, change: QLChange<'a>) -> Option<String> {
-        if self.validate_change(&change) {
-            match change {
-                QLChange::Query(q) => {
-                    let qid = &q.id().clone();
-                    self.queries.insert(qid.to_string(), q);
-                    Some(qid.to_string())
-                },
-                QLChange::Answer(a) => {
-                    let aid = &a.id().clone();
-                    self.answers.insert(aid.to_string(), a);
-                    Some(aid.to_string())
-                },
-                QLChange::Outcome(o) => {
-                    let oid = &o.id().clone();
-                    self.outcomes.insert(oid.to_string(), o);
-                    Some(oid.to_string())
-                },
-            }
-        }
-        else {
-            None
+    pub fn get_next_query(&self, aid: AnswerId) -> Option<Query<'a>> {
+        match self.get_path(aid) {
+            Some(qid) => self.get_query(qid),
+            None => self.get_random_query(),
         }
     }
 
-    pub fn extend(&mut self, new_ql: QueryList<'a>) -> Option<()> {
-        let mut new = self.clone();
-
-        for (qid, q) in new_ql.queries {
-            new.queries.insert(qid, q);
-        };
-        for (aid, a) in new_ql.answers {
-            new.answers.insert(aid, a);
-        };
-        for (oid, o) in new_ql.outcomes {
-            new.outcomes.insert(oid, o);
-        };
-
-        if QueryList::validate(&new) {
-            self.queries = new.queries;
-            self.answers = new.answers;
-            self.outcomes = new.outcomes;
-            Some(())
-        }
-        else {
-            None
-        }
+    pub fn insert_query(&mut self, query: Query<'a>) -> QueryId {
+        let out_qid = self.next_id;
+        self.queries.insert(out_qid, query);
+        self.next_id = self.next_id + 1;
+        out_qid
     }
 
-    fn validate_change(&self, change: &QLChange) -> bool {
-        match change {
-            
-            //nothing to check when adding an outcome
-            QLChange::Outcome(_) => { },
-            
-            //make sure all outcomes exist
-            QLChange::Answer(ans) => {
-                for o in ans.outcomes() {
-                    if !self.outcomes.contains_key(o) {
-                        return false
-                    };
-                };
-            },
-
-            //make sure all answers and outcomes exist, if referenced
-            QLChange::Query(query) => {
-                let ans = &query.answers();
-                for a in ans.iter() {
-                    if !self.answers.contains_key(a) {
-                        return false
-                    };
-                };
-            },
-        };
-        true
-    }
-
-    fn validate(new_ql: &'a QueryList) -> bool {
-        for a in new_ql.answers.values() {
-            for o in a.outcomes() {
-                if !new_ql.outcomes.contains_key(o) {
-                    return false
-                };
-            };
-        };
-
-        for q in new_ql.queries.values(){
-            let anss = &q.answers();
-            for a in anss.iter() {
-                if !new_ql.answers.contains_key(a) {
-                    return false
-                };
-            };
-        };
-        true
+    pub fn peek_queries(&self) -> &HashMap<QueryId, Query<'a>> {
+        &self.queries
     }
 }
 
@@ -202,84 +87,50 @@ impl<'a> QueryList<'a> {
 mod test {
     use super::*;
 
-    // nothing is linked or referenced here so it's useless, but it is valid
-    fn make_simple_querylist<'a>() -> QueryList<'a> {
-        let mut q1 = Query::from_text("a question");
-        let mut a1 = Answer::from_text("an answer");
-        let o1 = Outcome::new_cmd(&["echo", "lol"]);
+    fn gen_query<'a>(num_answers: i8) -> Query<'a> {
+        let mut q = Query::from_text("q0".to_string());
+        for i in 0..num_answers {
+            let text = format!("a{}", i);
+            let ans = Answer::from_text(text);
+            q.add_answer(ans.clone());
+        }
 
-        q1.add_answer(a1.id());
-        a1.add_outcome(&o1.id());
-
-        QueryList::new_from_vecs(vec![q1], vec![a1], vec![o1])
-
+        q
     }
 
     #[test]
-    fn validate_validation() {
-        //create known-good querylist
-        let mut ql = make_simple_querylist();
+    fn querylist() {
+        let mut ql = QueryList::new();
+        let start_id = ql.next_id;
 
-        assert!(QueryList::validate(&ql));
+        let q0 = gen_query(2);
 
-        // prep some new changes
-        let bad_o_2 = Outcome::new(|_, _| todo!());
+        let q0_id = ql.insert_query(q0);
 
-        let mut bad_q_1 = Query::from_text("asdf");
+        assert_eq!(q0_id, start_id);
+        assert_eq!(ql.next_id, start_id + 1);
 
-        let mut bad_a_1 = Answer::from_text("some answer");
+        let q1 = gen_query(1);
+        let q1_id = ql.insert_query(q1.clone());
 
-        bad_q_1.add_answer(&bad_a_1.id());
-        bad_a_1.add_outcome(&bad_o_2.id());
+        let aid_0 = AnswerId {
+            qid: q0_id,
+            sub: 0,
+        };
 
-        // adding the queries should both fail as-is
-        assert_eq!(None, ql.insert_query(bad_q_1.clone()));
+        //let aid_1 = AnswerId {
+        //    qid: q0_id,
+        //    sub: 1,
+        //};
 
-        // adding the answer should also fail as-is
-        assert_eq!(None, ql.insert_answer(bad_a_1.clone()));
+        ql.add_path(aid_0.clone(), q1_id);
 
-        // and the whole thing should still be valid as well
-        assert!(QueryList::validate(&ql));
+        let qid = ql.get_path(aid_0).unwrap();
+        assert_eq!(qid, q1_id);
 
-        // if we backdoor the query in, the whole thing should now be invalid
-        ql.queries.insert(bad_q_1.id().to_owned(), bad_q_1);
-        assert!(!QueryList::validate(&ql));
-
-        // inserting the referenced answer should still fail because its outcome isn't present
-        assert_eq!(None, ql.insert_answer(bad_a_1.clone()));
-
-        // if we backdoor the answer in, the whole thing is still invalid
-        ql.answers.insert(bad_a_1.id().to_owned(), bad_a_1);
-        assert!(!QueryList::validate(&ql));
-
-        //only by inserting the missing outcome does the whole thing validate
-        ql.insert_outcome(bad_o_2);
-        assert!(QueryList::validate(&ql));
-
-    }
-
-    #[test]
-    fn validate_linking() {
-        // create minimal querylist
-        let mut ql = make_simple_querylist();
-        let aid = ql.answers.keys().next().unwrap().clone();
-        let qid = ql.queries.keys().next().unwrap().clone();
-        let oid = ql.outcomes.keys().next().unwrap().clone();
-
-        // link the answer to the query, make sure nothing else changes
-        ql.link_answer_to_query(&aid, &qid);
-        assert!(QueryList::validate(&ql));
-        assert_eq!(aid.to_owned(), ql.queries.get(&qid).unwrap().answers()[0]);
-        assert_eq!(1, ql.queries.len());
-        assert_eq!(1, ql.answers.len());
-        assert_eq!(1, ql.outcomes.len());
-        
-        // link the outcome to the answer, make sure nothing else changes
-        ql.link_outcome_to_answer(&aid, &qid);
-        assert!(QueryList::validate(&ql));
-        assert_eq!(oid.to_owned(), ql.answers.get(&aid).unwrap().outcomes()[0]);
-        assert_eq!(1, ql.queries.len());
-        assert_eq!(1, ql.answers.len());
-        assert_eq!(1, ql.outcomes.len());
+        let q_out = ql.get_query(qid).unwrap();
+        assert_eq!(q_out, q1);
     }
 }
+
+
