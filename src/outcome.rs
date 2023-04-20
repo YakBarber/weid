@@ -4,55 +4,56 @@ use std::process::Command;
 use std::rc::Rc;
 use std::fmt;
 
-use nanoid::nanoid;
 use anyhow::Result;
 
 use crate::qa::*;
+use crate::querylist::*;
 
-pub type OutcomeId = String;
+
 
 #[derive(Clone)]
-pub struct Outcome<'a> {
-    _id: String,
-    closure: Rc<dyn Fn(&Query, &Answer) -> Result<String> + 'a>,
+pub enum Outcome<'a> {
+    Modify(Rc<dyn FnOnce(&mut QueryList) -> Result<()> + 'a>),
+    Command(String),
+    Closure(Rc<dyn Fn() -> Result<String> + 'a>),
 }
 
 impl<'a> fmt::Debug for Outcome<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Outcome #{:?}", self._id)
+        write!(f, "Outcome")
     }
 }
 
 impl<'a> Outcome<'a> {
-    pub fn id(&self) -> &OutcomeId {
-        &self._id
+    pub fn new_cmd(cmd: String) -> Self {
+        todo!();
     }
 
-    pub fn execute(&self, query: &Query, answer: &Answer) -> Result<String> {
-        (&self.closure)(query, answer)
-    }
-
-    pub fn new<F>(cloj: F) -> Outcome<'a>
-    where
-        F: Fn(&Query, &Answer) -> Result<String> + 'a,
+    pub fn new_closure<F>(fun: F) -> Self
+    where 
+        F: Fn() -> Result<String> + 'a
     {
-        Outcome {
-            _id: nanoid!(),
-            closure: Rc::new(cloj),
-        }
+        Outcome::Closure(Rc::new(fun))
+        
     }
 
+    pub fn execute(&self) -> Result<String> {
+        match self {
+            Outcome::Modify(_) => todo!(),
+            Outcome::Closure(f) => {
+                f()
 
-    pub fn new_cmd(cmd: &'a [&str]) -> Outcome<'a> {
-        Outcome {
-            _id: nanoid!(),
-            closure: Rc::new(|q, a| run_external_cmd(cmd)),
+            },
+            Outcome::Command(cmd) => {
+                run_external_cmd(cmd.clone())
+            },
         }
     }
 }
 
-pub fn run_external_cmd(args: &[&str]) -> Result<String>{
-    let mut builder = Command::new(args[0]);
+pub fn run_external_cmd(cmd: String) -> Result<String> {
+    let args = cmd.split(" ").map(|s| s.to_string()).collect::<Vec<String>>();
+    let mut builder = Command::new(&args[0]);
     let _ = &builder.args(&args[1..]);
     
     let out = builder.output()?;
