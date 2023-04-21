@@ -49,9 +49,11 @@ This will create a single query with two possible answers:
 
     weid -q "How are you feeling?" -a "good" -a "bad" 
 
-The following will create two queries, the first with three possible answers, and the second with only one. The `-a "spicy!"` argument occurs before any queries are defined, so it is a general answer that is available to all queries. The other two answers only apply to the query that preceded them.
+The following will create two queries, the first with three possible answers, and the second with only one. 
 
     weid -a "spicy!" -q "How are you feeling?" -a "good" -a "bad" -q "What rhymes with klicy?"
+
+The `-a "spicy!"` argument occurs before any queries are defined, so it is a general answer that is available to all queries. The other two answers only apply to the query that preceded them.
 
 The result will be something like:
 
@@ -81,7 +83,7 @@ Until better docs are made, the best reference for using `weid` as a library bes
 
 - `struct Query` - Represents the question being asked. Stores `Answer`s.
 - `struct Answer` - Represents the answer that you choose. Stores `Outcome`s.
-- `enum Outcome` - Represents something that happens when an answer is chosen. At the moment, this is limited to a string representing a shell command. The library version of `weid` also includes the ability to run arbitrary closures and will eventually be able to modify the `QueryList`, described below, which theoretically will allow the user to modify which `Query` is asked next, among other niftyness.
+- `enum Outcome` - Represents something that happens when an answer is chosen. At the moment, this is limited to a string representing a shell command. The library version of `weid` also includes the ability to run arbitrary closures and will eventually be able to modify the `QueryList`, described below, which theoretically will allow the user to change which `Query` is asked next, among other niftyness.
 - `struct QueryList` - Stores the `Query`s (and the `Answer`s/`Outcome`s they contain) for the current session. It maintains awareness of which `Query` is which.
 - `struct Querier` - The session state. Perhaps I should have called it `Session`. This manages the `QueryList` and remembers which `Query`s have been asked already.
 
@@ -89,7 +91,7 @@ All of this is subject to change, but hopefully the intent and direction of this
 
 ## THE FUTURE
 
-Planned additions to `weid` mostly focus on improving interaction and enabling external scripting. This may include the ability to interact with `weid` via a FIFO, secondary stdin stream, and/or input files, in addition to the existing CLI arguments. This will necessarily include a better command definition/description format.
+Planned additions to `weid` mostly focus on improving interaction and enabling external scripting. This may include the ability to interact with `weid` via a FIFO, secondary stdin+stdout streams, and/or batch input/output files, in addition to the existing CLI arguments. This will necessarily include a better command definition/description format.
 
 More examples, documentation, and help text are also necessary.
 
