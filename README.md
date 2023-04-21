@@ -26,7 +26,7 @@ You can build `weid` by cloning this repository and using the standard Rust tool
     git clone https://github.com/yakbarber/weid
     cd weid
     cargo build
-    cargo install
+    cargo install --path .
 
 The unit tests can be run via `cargo test`.
 
