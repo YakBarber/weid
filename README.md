@@ -10,10 +10,11 @@ Realistically, `weid` can be a lot of things:
 - A tool for reviewing/reacting to something
 - A quiz/flashcard interface
 - A text-based adventure game engine
+- A ??? for ???
 
 ## Expectations
 
-`weid` is currently in "early alpha". At the moment, it is mostly a vehicle for the [Pinboard modification example](examples/pbin), as a demonstration of some of `weid`'s goals via its use as a library.
+`weid` is currently in "early alpha." At the moment, it is mostly a vehicle for the [Pinboard modification example](examples/pbin), as a demonstration of some of `weid`'s goals via its use as a library.
 
 The standalone `weid` application, while functional, is not all that useful yet.
 
@@ -88,7 +89,7 @@ All of this is subject to change, but hopefully the intent and direction of this
 
 ## THE FUTURE
 
-Planned additions to `weid` mostly focus on improving interaction and enabling external scripting. This may include the ability to interact with `weid` via a FIFO or secondary stdin stream, in addition to the CLI arguments. This will necessarily include a better command definition/description format.
+Planned additions to `weid` mostly focus on improving interaction and enabling external scripting. This may include the ability to interact with `weid` via a FIFO, secondary stdin stream, and/or input files, in addition to the existing CLI arguments. This will necessarily include a better command definition/description format.
 
 More examples, documentation, and help text are also necessary.
 
