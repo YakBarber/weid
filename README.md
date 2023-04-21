@@ -12,14 +12,6 @@ Realistically, `weid` can be a lot of things:
 - A text-based adventure game engine
 - A ??? for ???
 
-## Expectations
-
-`weid` is currently in "early alpha." At the moment, it is mostly a vehicle for the [Pinboard modification example](examples/pbin), as a demonstration of some of `weid`'s goals via its use as a library.
-
-The standalone `weid` application, while functional, is not all that useful yet.
-
-It should be expected that things will break, not work, and change as `weid` matures.
-
 ## Installation
 
 You can build `weid` by cloning this repository and using the standard Rust tooling: 
@@ -35,7 +27,9 @@ The unit tests can be run via `cargo test`.
 
 ### As a standalone application
 
-`weid` can be called from the command line with the following options:
+You call `weid`, with arguments defining which questions to ask, which answers to allow, and what to do after each answer is chosen, and weid will ask you those questions and do those things. After each answer chosen, the chosen answer will be [printed to stdout](#expectations). Then the next question is asked, and so on.
+
+`weid` can be called with the following arguments:
 
 - `-q TEXT`, `--query=TEXT`: Define a new query (a question you want `weid` to ask you). The text supplied to this argument can be in markdown format.
 - `-a TEXT`, `--answer=TEXT`: Define a new answer (an option you have when `weid` asks you a question).
@@ -77,6 +71,20 @@ If you answer "yes" to the resulting prompt, then `weid` will run the `ls` comma
 
 Until better docs are made, the best reference for using `weid` as a library besides the source itself is the [Pinboard example](examples/pbin). This demonstrates more effective usage of the internal mechanisms to define queries programmatically. It also utilizes markdown to format the queries.
 
+## Expectations
+
+`weid` is currently in "early alpha." At the moment, it is mostly a vehicle for the [Pinboard modification example](examples/pbin), as a demonstration of some of `weid`'s goals via its use as a library.
+
+The standalone `weid` application, while functional, is not super useful yet. It will improve.
+
+It should be expected that things will break, not work, and change as `weid` matures.
+
+## THE FUTURE
+
+Planned additions to `weid` mostly focus on improving interaction and enabling external scripting. This may include the ability to interact with `weid` via a FIFO, secondary stdin+stdout streams, and/or batch input/output files, in addition to the existing CLI arguments. This will necessarily include a better command definition/description format.
+
+More examples, documentation, and help text are also necessary.
+
 ## Design
 
 `weid`'s architecture is built from five main objects:
@@ -89,13 +97,8 @@ Until better docs are made, the best reference for using `weid` as a library bes
 
 All of this is subject to change, but hopefully the intent and direction of this project is somewhat elucidated.
 
-## THE FUTURE
 
-Planned additions to `weid` mostly focus on improving interaction and enabling external scripting. This may include the ability to interact with `weid` via a FIFO, secondary stdin+stdout streams, and/or batch input/output files, in addition to the existing CLI arguments. This will necessarily include a better command definition/description format.
-
-More examples, documentation, and help text are also necessary.
-
-## Name
+## The name
 
 As I'm sure you have already guessed, `weid`'s name is derived from the reconstructed Proto-Indo-European root _\*weid-_, which means "to see" or "to know".
 
