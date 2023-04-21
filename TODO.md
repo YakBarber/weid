@@ -1,12 +1,10 @@
-- Make `Answer` and `Outcome` generalizable, so they don't have to be repeated for each `Query`
 - Replace custom `Result` and generic `Error`s with `thiserror`
-- Convert do_next_query/Querier into a state machine
 - Add ability to interact with `weid` via:
     - FIFO
     - shell pipe (will require a subprocess)
-- Add rofi-style "modes" for managing functionality
+    - input/output files
 - Add CLI arg for above additions
-- Replace `Result<Option<..>>` stuff with a custom result type
 - Define JSON (or whatever) DSL for automation
-- Expand README
 - Add async for network interaction
+- Add rofi-style "modes" for managing functionality?
+- Convert Querier into a state machine...?
