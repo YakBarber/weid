@@ -107,5 +107,5 @@ As I'm sure you have already guessed, `weid`'s name is derived from the reconstr
 
 _\*weid-_ is an ancestor to such relevant words as _advise_, _review_, _wisdom_, _interview_, _guide_, _idea_, and _history_, and such irrelevant words as _prudent_, _idol_, _envy_, and _twit_.
 
-I pronounce _\*weid-_ as _wi&#720;d_, like "weed."
+In (American) English, I pronounce _\*weid-_ like "weed." IPA notation: _wi&#720;d_.
 
