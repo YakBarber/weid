@@ -40,11 +40,11 @@ These arguments are *position sensitive*. Examples will probably be helpful.
 
 #### Examples
 
-##### Create a single query with two possible answers:
+##### Create a single query with two possible answers
 
     weid -q "How are you feeling?" -a "good" -a "bad" 
 
-##### Create two queries which share a single answer:
+##### Create two queries which share a single answer
 
     weid -a "spicy!" -q "How are you feeling?" -a "good" -a "bad" -q "What rhymes with klicy?"
 
