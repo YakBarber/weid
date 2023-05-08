@@ -40,17 +40,17 @@ These arguments are *position sensitive*. Examples will probably be helpful.
 
 #### Examples
 
-##### Create a single query with two possible answers
+##### Create a single query with two possible answers:
 
     weid -q "How are you feeling?" -a "good" -a "bad" 
 
-##### Create two queries which share a single answer
+##### Create two queries which share a single answer:
 
     weid -a "spicy!" -q "How are you feeling?" -a "good" -a "bad" -q "What rhymes with klicy?"
 
 Definition happens left to right. The `-a "spicy!"` argument occurs before any queries are defined, so it is a default answer that is available to all queries. The other answers only apply to the query that preceded them.
 
-The resulting prompt will be something like:
+The resulting prompt will be something like,
 
     How are you feeling?
     [1] good
@@ -62,7 +62,7 @@ The resulting prompt will be something like:
     What rhymes with klicy?
     [1] spicy!
 
-##### Make stuff happen
+##### Make "stuff" happen:
 
 Outcomes associate with the answer that immediately precedes them in the argument order. Outcomes cannot be set without an associated answer. Observe:
 
