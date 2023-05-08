@@ -28,7 +28,7 @@ The unit tests can be run via `cargo test`.
 
 ### As a standalone application
 
-You call `weid` with arguments defining which questions to ask, which answers to allow, and what to do after each answer is chosen, and `weid` will ask you those questions and do those things, based on how you answer. After each answer chosen, the chosen answer will be [printed to stdout](#expectations). Then the next question is asked, and so on.
+You call `weid` with arguments defining which questions to ask, which answers to allow, and what to do after each answer is chosen, and `weid` will ask you those questions and do those things, based on how you answer. After each answer is chosen, it will be [printed to stdout](#expectations). Then the next question is asked, and so on.
 
 `weid` can be called with the following arguments:
 
