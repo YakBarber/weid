@@ -10,7 +10,7 @@ Realistically, `weid` can be a lot of things:
 - A tool for reviewing/reacting to something
 - A quiz/flashcard interface
 - A text-based adventure game engine
-- A `rofi` or `dmenu2` replacement for terminal denizens
+- A "port" of `rofi` or `dmenu2` to the terminal
 - A ??? for ???
 
 ## Installation
