@@ -85,7 +85,6 @@ fn edit_in_editor(start_text: &String) -> Result<String> {
     Ok(change)
 }
 
-// this is gross
 fn create_pinboard_query<'a>(
     post: pbin::PinboardPost,
     pbtags: pbin::PinboardSuggested, 
